@@ -1,5 +1,10 @@
+#include <ezvm/ezvm.h>
+#include <iostream>
+#include <getopt.h>
 using namespace std;
 #define VERSION "1.0.0"
+
+extern void run_it(ezVM& vm);
 
 void show_help(const char *name) {
   cout << name << " version " << VERSION << endl;
