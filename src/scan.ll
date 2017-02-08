@@ -1,7 +1,9 @@
 %{
-#include "parse.hh"
 #include <stdlib.h>
 #include <string.h>
+#include <stddef.h>
+#include <stdint.h>
+#include "parse.hh"
 %}
 
 %option yylineno
@@ -15,6 +17,7 @@
 [\n\r] return EOL;
 "?" {return CMD_PRINT;}
 "func" {return FUNC;}
+"dump" {return CMD_DUMP;}
 "quit" {return CMD_QUIT;}
 [_a-zA-Z][_a-zA-Z0-9]* { yylval.s_value = strdup(yytext); return SYMBOL;}
 %%

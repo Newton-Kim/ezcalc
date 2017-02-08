@@ -4,7 +4,7 @@
 using namespace std;
 #define VERSION "1.0.0"
 
-extern void run_it(ezVM& vm);
+extern void run_it(void);
 
 void show_help(const char *name) {
   cout << name << " version " << VERSION << endl;
@@ -41,7 +41,6 @@ int main(int argc, char *argv[]) {
     show_help(argv[0]);
   if (version_flag)
     cout << VERSION << endl;
-  ezVM vm;
-  run_it(vm);
+  run_it();
   return 0;
 }
