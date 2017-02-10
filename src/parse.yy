@@ -45,7 +45,7 @@ static vector<ezAddress> s_addrs;
 %%
 program : %empty | program proc | program code { s_vm.run(); cout << "> ";};
 
-proc : FUNC SYMBOL '(' args ')' '{' codes '}' EOL;
+proc : FUNC SYMBOL '(' args ')' { free($2); } '{' codes '}' EOL;
 
 codes : %empty | codes code;
 
@@ -60,7 +60,7 @@ quit : CMD_QUIT EOL {exit(0);};
 
 assignment : vars '=' {s_args.clear();} exprs;
 
-print : CMD_PRINT {s_args.clear();} exprs {
+print : CMD_PRINT {s_args.clear(); s_args.push_back(ezAddress(EZ_ASM_SEGMENT_CONSTANT, s_vm.assembler().constant(1)));} exprs {
 		ezAsmProcedure* proc = s_proc_stack.top();
 		ezAddress func(EZ_ASM_SEGMENT_GLOBAL, s_vm.assembler().global(EZC_PRINT)); 
 		proc->call(func, s_args, s_addrs);
@@ -68,11 +68,11 @@ print : CMD_PRINT {s_args.clear();} exprs {
 
 dump : CMD_DUMP {s_vm.dump().dump("stdout");}
 
-args : %empty | args ',' SYMBOL;
+args : %empty | args ',' SYMBOL { free($3); };
 
 vars : var | vars ',' var;
 
-var : SYMBOL { $$.segment = EZ_ASM_SEGMENT_GLOBAL; $$.offset = s_vm.assembler().global($1); };
+var : SYMBOL { $$.segment = EZ_ASM_SEGMENT_GLOBAL; $$.offset = s_vm.assembler().global($1); free($1); };
 
 exprs : expr {s_args.push_back(ezAddress($1.segment, $1.offset));}
 	| exprs ',' expr {s_args.push_back(ezAddress($3.segment, $3.offset));};
