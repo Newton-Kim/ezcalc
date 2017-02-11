@@ -1,4 +1,5 @@
 %{
+#include "procstack.h"
 #include <ezvm/ezvm.h>
 #include <iostream>
 #include <cstddef>
@@ -10,10 +11,7 @@ void yyerror (char const *s);
 
 using namespace std;
 static ezVM s_vm;
-static bool is_over = false;
-static stack<ezAsmProcedure*> s_proc_stack;
-static vector<ezAddress> s_args;
-static vector<ezAddress> s_addrs;
+static ProcStack s_proc_stack;
 
 #define EZC_ENTRY "main"
 #define EZC_PRINT "print"
@@ -44,19 +42,19 @@ static vector<ezAddress> s_addrs;
 %left '*' '/' '%'
 %%
 program : %empty | program proc | program code {
+  		s_proc_stack.clear();
 		s_vm.run();
-  		s_proc_stack.pop();
 		s_vm.assembler().reset(EZC_ENTRY);
-  		ezAsmProcedure* proc = s_vm.assembler().new_proc(EZC_ENTRY, 0, 0, 256, -1, -1);
+  		ezAsmProcedure* proc = s_vm.assembler().new_proc(EZC_ENTRY, 0, 0, 0, -1, -1);
   		s_proc_stack.push(proc);
 		cout << "> ";
 	};
 
-proc : FUNC SYMBOL '(' args ')' { free($2); } '{' codes '}' EOL;
+proc : FUNC SYMBOL '(' {s_proc_stack.args().clear();} args ')' { free($2); } '{' codes '}' EOL;
 
 codes : %empty | codes code;
 
-code : EOL | line EOL;
+code : EOL | line EOL {s_proc_stack.reset_temp();};
 
 line : assignment
 	| print
@@ -65,32 +63,41 @@ line : assignment
 
 quit : CMD_QUIT EOL {exit(0);};
 
-assignment : {s_addrs.clear(); } vars '=' {s_args.clear();} exprs {
-		ezAsmProcedure* proc = s_proc_stack.top();
-		proc->mv(s_addrs, s_args);
+assignment : {s_proc_stack.addrs().clear(); }
+	vars '=' {s_proc_stack.args().clear();}
+	exprs {
+		ezAsmProcedure* proc = s_proc_stack.func();
+		proc->mv(s_proc_stack.addrs(), s_proc_stack.args());
 	};
 
 print : CMD_PRINT {
-		s_args.clear();
-		s_addrs.clear();
-		s_args.push_back(ezAddress(EZ_ASM_SEGMENT_CONSTANT, s_vm.assembler().constant(1)));
+		s_proc_stack.args().clear();
+		s_proc_stack.addrs().clear();
+		s_proc_stack.args().push_back(ezAddress(EZ_ASM_SEGMENT_CONSTANT, s_vm.assembler().constant(1)));
 	} exprs {
-		ezAsmProcedure* proc = s_proc_stack.top();
+		ezAsmProcedure* proc = s_proc_stack.func();
 		ezAddress func(EZ_ASM_SEGMENT_GLOBAL, s_vm.assembler().global(EZC_PRINT)); 
-		proc->call(func, s_args, s_addrs);
+		proc->call(func, s_proc_stack.args(), s_proc_stack.addrs());
 	};
 
 dump : CMD_DUMP {s_vm.dump().dump("stdout");}
 
-args : %empty | args ',' SYMBOL { free($3); };
+args : %empty | args ',' SYMBOL {
+		s_proc_stack.args().push_back(ezAddress(EZ_ASM_SEGMENT_GLOBAL, s_vm.assembler().global($3)));
+		free($3);
+	};
 
-vars : var {s_addrs.push_back(ezAddress($1.segment, $1.offset));}
-	| vars ',' var {s_addrs.push_back(ezAddress($3.segment, $3.offset));};
+vars : var {s_proc_stack.addrs().push_back(ezAddress($1.segment, $1.offset));}
+	| vars ',' var {s_proc_stack.addrs().push_back(ezAddress($3.segment, $3.offset));};
 
-var : SYMBOL { $$.segment = EZ_ASM_SEGMENT_GLOBAL; $$.offset = s_vm.assembler().global($1); free($1); };
+var : SYMBOL {
+		$$.segment = EZ_ASM_SEGMENT_GLOBAL;
+		$$.offset = s_vm.assembler().global($1);
+		free($1);
+	};
 
-exprs : expr {s_args.push_back(ezAddress($1.segment, $1.offset));}
-	| exprs ',' expr {s_args.push_back(ezAddress($3.segment, $3.offset));};
+exprs : expr {s_proc_stack.args().push_back(ezAddress($1.segment, $1.offset));}
+	| exprs ',' expr {s_proc_stack.args().push_back(ezAddress($3.segment, $3.offset));};
 
 expr : INTEGER { $$.segment = EZ_ASM_SEGMENT_CONSTANT; $$.offset = s_vm.assembler().constant($1); }
 	| FLOAT { $$.segment = EZ_ASM_SEGMENT_CONSTANT; $$.offset = s_vm.assembler().constant($1); }
@@ -100,9 +107,13 @@ expr : INTEGER { $$.segment = EZ_ASM_SEGMENT_CONSTANT; $$.offset = s_vm.assemble
 	| expr '*' expr
 	| expr '/' expr
 	| expr '%' expr
-	| '+' expr %prec BATATA
-	| '-' expr %prec BATATA
-	| '(' expr ')'
+	| '-' expr %prec BATATA {
+		$$.segment = EZ_ASM_SEGMENT_LOCAL;
+		$$.offset = s_proc_stack.inc_temp();
+		ezAsmProcedure* func = s_proc_stack.func();
+		func->neg(ezAddress($$.segment, $$.offset), ezAddress($2.segment, $2.offset));
+	}
+	| '(' expr ')' {$$ = $2;}
 	;
 %%
 

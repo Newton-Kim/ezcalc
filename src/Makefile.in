@@ -104,7 +104,8 @@ CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 am__installdirs = "$(DESTDIR)$(bindir)"
 PROGRAMS = $(bin_PROGRAMS)
-am_ezcalc_OBJECTS = main.$(OBJEXT) parse.$(OBJEXT) scan.$(OBJEXT)
+am_ezcalc_OBJECTS = main.$(OBJEXT) parse.$(OBJEXT) scan.$(OBJEXT) \
+	procstack.$(OBJEXT)
 ezcalc_OBJECTS = $(am_ezcalc_OBJECTS)
 ezcalc_DEPENDENCIES =
 AM_V_lt = $(am__v_lt_@AM_V@)
@@ -335,7 +336,7 @@ target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-ezcalc_SOURCES = main.cc parse.yy scan.ll
+ezcalc_SOURCES = main.cc parse.yy scan.ll procstack.cc
 ezcalc_LDADD = -lezvm
 AM_CPPFLAGS = -I../../include -std=c++11
 BUILT_SOURCES = parse.hh
@@ -355,9 +356,9 @@ $(srcdir)/Makefile.in:  $(srcdir)/Makefile.am  $(am__configure_deps)
 	      exit 1;; \
 	  esac; \
 	done; \
-	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign src/Makefile'; \
+	echo ' cd $(top_srcdir) && $(AUTOMAKE) --gnu src/Makefile'; \
 	$(am__cd) $(top_srcdir) && \
-	  $(AUTOMAKE) --foreign src/Makefile
+	  $(AUTOMAKE) --gnu src/Makefile
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	@case '$?' in \
 	  *config.status*) \
@@ -440,6 +441,7 @@ distclean-compile:
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/main.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/parse.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/procstack.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/scan.Po@am__quote@
 
 .cc.o:
