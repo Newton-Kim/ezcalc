@@ -65,10 +65,14 @@ line : assignment
 
 quit : CMD_QUIT EOL {exit(0);};
 
-assignment : vars '=' {s_args.clear();} exprs;
+assignment : {s_addrs.clear(); } vars '=' {s_args.clear();} exprs {
+		ezAsmProcedure* proc = s_proc_stack.top();
+		proc->mv(s_addrs, s_args);
+	};
 
 print : CMD_PRINT {
 		s_args.clear();
+		s_addrs.clear();
 		s_args.push_back(ezAddress(EZ_ASM_SEGMENT_CONSTANT, s_vm.assembler().constant(1)));
 	} exprs {
 		ezAsmProcedure* proc = s_proc_stack.top();
@@ -80,7 +84,8 @@ dump : CMD_DUMP {s_vm.dump().dump("stdout");}
 
 args : %empty | args ',' SYMBOL { free($3); };
 
-vars : var | vars ',' var;
+vars : var {s_addrs.push_back(ezAddress($1.segment, $1.offset));}
+	| vars ',' var {s_addrs.push_back(ezAddress($3.segment, $3.offset));};
 
 var : SYMBOL { $$.segment = EZ_ASM_SEGMENT_GLOBAL; $$.offset = s_vm.assembler().global($1); free($1); };
 
