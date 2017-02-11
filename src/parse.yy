@@ -43,7 +43,14 @@ static vector<ezAddress> s_addrs;
 %left '+' '-'
 %left '*' '/' '%'
 %%
-program : %empty | program proc | program code { s_vm.run(); cout << "> ";};
+program : %empty | program proc | program code {
+		s_vm.run();
+  		s_proc_stack.pop();
+		s_vm.assembler().reset(EZC_ENTRY);
+  		ezAsmProcedure* proc = s_vm.assembler().new_proc(EZC_ENTRY, 0, 0, 256, -1, -1);
+  		s_proc_stack.push(proc);
+		cout << "> ";
+	};
 
 proc : FUNC SYMBOL '(' args ')' { free($2); } '{' codes '}' EOL;
 
@@ -60,7 +67,10 @@ quit : CMD_QUIT EOL {exit(0);};
 
 assignment : vars '=' {s_args.clear();} exprs;
 
-print : CMD_PRINT {s_args.clear(); s_args.push_back(ezAddress(EZ_ASM_SEGMENT_CONSTANT, s_vm.assembler().constant(1)));} exprs {
+print : CMD_PRINT {
+		s_args.clear();
+		s_args.push_back(ezAddress(EZ_ASM_SEGMENT_CONSTANT, s_vm.assembler().constant(1)));
+	} exprs {
 		ezAsmProcedure* proc = s_proc_stack.top();
 		ezAddress func(EZ_ASM_SEGMENT_GLOBAL, s_vm.assembler().global(EZC_PRINT)); 
 		proc->call(func, s_args, s_addrs);
