@@ -116,9 +116,27 @@ expr : INTEGER { $$.segment = EZ_ASM_SEGMENT_CONSTANT; $$.offset = s_vm.assemble
 		ezAddress lparam($1.segment, $1.offset), rparam($3.segment, $3.offset);
 		func->sub(ezAddress ($$.segment, $$.offset), lparam, rparam);
 	}
-	| expr '*' expr
-	| expr '/' expr
-	| expr '%' expr
+	| expr '*' expr {
+		$$.segment = EZ_ASM_SEGMENT_LOCAL;
+		$$.offset = s_proc_stack.inc_temp();
+		ezAsmProcedure* func = s_proc_stack.func();
+		ezAddress lparam($1.segment, $1.offset), rparam($3.segment, $3.offset);
+		func->mul(ezAddress ($$.segment, $$.offset), lparam, rparam);
+	}
+	| expr '/' expr {
+		$$.segment = EZ_ASM_SEGMENT_LOCAL;
+		$$.offset = s_proc_stack.inc_temp();
+		ezAsmProcedure* func = s_proc_stack.func();
+		ezAddress lparam($1.segment, $1.offset), rparam($3.segment, $3.offset);
+		func->div(ezAddress ($$.segment, $$.offset), lparam, rparam);
+	}
+	| expr '%' expr {
+		$$.segment = EZ_ASM_SEGMENT_LOCAL;
+		$$.offset = s_proc_stack.inc_temp();
+		ezAsmProcedure* func = s_proc_stack.func();
+		ezAddress lparam($1.segment, $1.offset), rparam($3.segment, $3.offset);
+		func->mod(ezAddress ($$.segment, $$.offset), lparam, rparam);
+	}
 	| '-' expr %prec BATATA {
 		$$.segment = EZ_ASM_SEGMENT_LOCAL;
 		$$.offset = s_proc_stack.inc_temp();
