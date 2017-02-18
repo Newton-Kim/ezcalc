@@ -46,7 +46,7 @@ program : %empty | program proc | program code {
   		s_proc_stack.clear();
 		s_vm.run();
 		s_vm.assembler().reset(EZC_ENTRY);
-  		ezAsmProcedure* proc = s_vm.assembler().new_proc(EZC_ENTRY, 0, 0, 0, -1, -1);
+  		ezAsmProcedure* proc = s_vm.assembler().new_proc(EZC_ENTRY, 0, 0, -1, -1);
   		s_proc_stack.push(proc);
 		cout << "> ";
 	};
@@ -162,7 +162,7 @@ expr : INTEGER { $$.segment = EZ_ASM_SEGMENT_CONSTANT; $$.offset = s_vm.assemble
 
 void run_it(void) {
   s_vm.assembler().entry(EZC_ENTRY);
-  ezAsmProcedure* proc = s_vm.assembler().new_proc(EZC_ENTRY, 0, 0, 256, -1, -1);
+  ezAsmProcedure* proc = s_vm.assembler().new_proc(EZC_ENTRY, 0, 256, -1, -1);
   s_proc_stack.push(proc);
   cout << "> ";
   yyparse();
