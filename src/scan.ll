@@ -15,7 +15,9 @@
 [0-9]+\.[0-9]+[EDed][+-][0-9]+ { yylval.f_value = strtof(yytext, NULL); return FLOAT;}
 [-+*/%=\^] return *yytext;
 [\n\r] return EOL;
-"?" {return CMD_PRINT;}
+"?"    return QUESTION;
+"print" {return CMD_PRINT;}
+"error" {return CMD_ERROR;}
 "func" {return FUNC;}
 "dump" {return CMD_DUMP;}
 "quit" {return CMD_QUIT;}

@@ -14,11 +14,12 @@ static ezVM s_vm;
 static ProcStack s_proc_stack;
 
 #define EZC_ENTRY "main"
-#define EZC_PRINT "print"
+#define EZC_STDOUT "stdout"
+#define EZC_STDERR "stderr"
 %}
 
-%token INTEGER FLOAT SYMBOL EOL BATATA FUNC
-%token CMD_PRINT CMD_QUIT CMD_DUMP
+%token INTEGER FLOAT SYMBOL EOL BATATA FUNC QUESTION
+%token CMD_PRINT CMD_ERROR CMD_QUIT CMD_DUMP
 
 %type <s_value> SYMBOL
 %type <i_value> INTEGER
@@ -58,6 +59,7 @@ code : EOL | line EOL {s_proc_stack.reset_temp();};
 
 line : assignment
 	| print
+	| err
 	| dump
 	| quit;
 
@@ -70,15 +72,26 @@ assignment : {s_proc_stack.addrs().clear(); }
 		proc->mv(s_proc_stack.addrs(), s_proc_stack.args());
 	};
 
-print : CMD_PRINT {
+print : cmd_print {
 		s_proc_stack.args().clear();
 		s_proc_stack.addrs().clear();
-		s_proc_stack.args().push_back(ezAddress(EZ_ASM_SEGMENT_CONSTANT, s_vm.assembler().constant(1)));
 	} exprs {
 		ezAsmProcedure* proc = s_proc_stack.func();
-		ezAddress func(EZ_ASM_SEGMENT_GLOBAL, s_vm.assembler().global(EZC_PRINT)); 
+		ezAddress func(EZ_ASM_SEGMENT_GLOBAL, s_vm.assembler().global(EZC_STDOUT)); 
 		proc->call(func, s_proc_stack.args(), s_proc_stack.addrs());
 	};
+
+cmd_print : CMD_PRINT | QUESTION;
+
+err : CMD_ERROR {
+		s_proc_stack.args().clear();
+		s_proc_stack.addrs().clear();
+	} exprs {
+		ezAsmProcedure* proc = s_proc_stack.func();
+		ezAddress func(EZ_ASM_SEGMENT_GLOBAL, s_vm.assembler().global(EZC_STDERR)); 
+		proc->call(func, s_proc_stack.args(), s_proc_stack.addrs());
+	};
+
 
 dump : CMD_DUMP {s_vm.dump().dump("stdout");}
 
