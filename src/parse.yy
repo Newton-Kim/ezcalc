@@ -4,6 +4,7 @@
 #include <iostream>
 #include <cstddef>
 #include <cstdint>
+#include <cstring>
 #define YYDEBUG 1
 
 int yylex();
@@ -12,16 +13,17 @@ void yyerror (char const *s);
 using namespace std;
 static ezVM s_vm;
 static ProcStack s_proc_stack;
+static bool s_prompt = false;
 
 #define EZC_ENTRY "main"
 #define EZC_STDOUT "stdout"
 #define EZC_STDERR "stderr"
 %}
 
-%token INTEGER FLOAT SYMBOL EOL BATATA FUNC QUESTION
+%token STRING INTEGER FLOAT SYMBOL EOL BATATA FUNC QUESTION
 %token CMD_PRINT CMD_ERROR CMD_QUIT CMD_DUMP
 
-%type <s_value> SYMBOL
+%type <s_value> SYMBOL STRING
 %type <i_value> INTEGER
 %type <f_value> FLOAT
 %type <a_value> expr var
@@ -43,12 +45,14 @@ static ProcStack s_proc_stack;
 %left '*' '/' '%'
 %%
 program : %empty | program proc | program code {
-  		s_proc_stack.clear();
-		s_vm.run();
-		s_vm.assembler().reset(EZC_ENTRY);
-  		ezAsmProcedure* proc = s_vm.assembler().new_proc(EZC_ENTRY, 0, 0, -1, -1);
-  		s_proc_stack.push(proc);
-		cout << "> ";
+		if(s_prompt) {
+			s_proc_stack.clear();
+			s_vm.run();
+			s_vm.assembler().reset(EZC_ENTRY);
+			ezAsmProcedure* proc = s_vm.assembler().new_proc(EZC_ENTRY, 0, 0, -1, -1);
+			s_proc_stack.push(proc);
+			cout << "> ";
+		}
 	};
 
 proc : FUNC SYMBOL '(' {s_proc_stack.args().clear();} args ')' { free($2); } '{' codes '}' EOL;
@@ -114,6 +118,7 @@ exprs : expr {s_proc_stack.args().push_back(ezAddress($1.segment, $1.offset));}
 
 expr : INTEGER { $$.segment = EZ_ASM_SEGMENT_CONSTANT; $$.offset = s_vm.assembler().constant($1); }
 	| FLOAT { $$.segment = EZ_ASM_SEGMENT_CONSTANT; $$.offset = s_vm.assembler().constant($1); }
+	| STRING { $$.segment = EZ_ASM_SEGMENT_CONSTANT; $$.offset = s_vm.assembler().constant($1); }
 	| var {$$ = $1;}
 	| expr '+' expr {
 		$$.segment = EZ_ASM_SEGMENT_LOCAL;
@@ -161,11 +166,25 @@ expr : INTEGER { $$.segment = EZ_ASM_SEGMENT_CONSTANT; $$.offset = s_vm.assemble
 %%
 
 void run_it(void) {
+  s_prompt = true;
   s_vm.assembler().entry(EZC_ENTRY);
   ezAsmProcedure* proc = s_vm.assembler().new_proc(EZC_ENTRY, 0, 256, -1, -1);
   s_proc_stack.push(proc);
   cout << "> ";
   yyparse();
+}
+
+void run_it(string source) {
+  extern FILE* yyin;
+  s_prompt = false;
+  yyin = fopen(source.c_str(), "rb");
+  if(!yyin) throw runtime_error(strerror(errno));
+  s_vm.assembler().entry(EZC_ENTRY);
+  ezAsmProcedure* proc = s_vm.assembler().new_proc(EZC_ENTRY, 0, 256, -1, -1);
+  s_proc_stack.push(proc);
+  yyparse();
+  s_proc_stack.clear();
+  s_vm.run();
 }
 
 void yyerror (char const *s) {

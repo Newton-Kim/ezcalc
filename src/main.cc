@@ -5,6 +5,7 @@ using namespace std;
 #define VERSION "1.0.0"
 
 extern void run_it(void);
+extern void run_it(string source);
 
 void show_help(const char *name) {
   cout << name << " version " << VERSION << endl;
@@ -15,6 +16,7 @@ void show_help(const char *name) {
 }
 
 int main(int argc, char *argv[]) {
+  string source;
   int c, option_index;
   bool help_flag = false, version_flag = false;
   struct option long_options[] = {{"help", no_argument, 0, 'h'},
@@ -41,6 +43,11 @@ int main(int argc, char *argv[]) {
     show_help(argv[0]);
   if (version_flag)
     cout << VERSION << endl;
-  run_it();
+
+  while(optind < argc) 
+    source = argv[optind++];
+
+  if(source.empty()) run_it();
+  else run_it(source);
   return 0;
 }

@@ -22,4 +22,8 @@
 "dump" {return CMD_DUMP;}
 "quit" {return CMD_QUIT;}
 [_a-zA-Z][_a-zA-Z0-9]* { yylval.s_value = strdup(yytext); return SYMBOL;}
+"("|")"|"," {return *yytext;}
+#.* {}
+[ \t] {}
+\"[^"]*\" { yylval.s_value = strndup(yytext + 1, strlen(yytext) - 2); return STRING;}
 %%
