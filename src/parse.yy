@@ -20,12 +20,12 @@ static bool s_prompt = false;
 #define EZC_STDERR "stderr"
 %}
 
-%token STRING INTEGER FLOAT SYMBOL EOL BATATA FUNC QUESTION
+%token STRING INTEGER FLOAT COMPLEX SYMBOL EOL BATATA FUNC QUESTION
 %token CMD_PRINT CMD_ERROR CMD_QUIT CMD_DUMP
 
 %type <s_value> SYMBOL STRING
 %type <i_value> INTEGER
-%type <f_value> FLOAT
+%type <f_value> FLOAT COMPLEX
 %type <a_value> expr var
 
 %union {
@@ -118,6 +118,7 @@ exprs : expr {s_proc_stack.args().push_back(ezAddress($1.segment, $1.offset));}
 
 expr : INTEGER { $$.segment = EZ_ASM_SEGMENT_CONSTANT; $$.offset = s_vm.assembler().constant($1); }
 	| FLOAT { $$.segment = EZ_ASM_SEGMENT_CONSTANT; $$.offset = s_vm.assembler().constant($1); }
+	| COMPLEX { $$.segment = EZ_ASM_SEGMENT_CONSTANT; $$.offset = s_vm.assembler().constant(complex<double>(0,$1)); }
 	| STRING { $$.segment = EZ_ASM_SEGMENT_CONSTANT; $$.offset = s_vm.assembler().constant($1); }
 	| var {$$ = $1;}
 	| expr '+' expr {

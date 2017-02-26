@@ -3,16 +3,21 @@
 #include <string.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <stdio.h>
 #include "parse.hh"
+// fp {[0-9]+\.|\.[0-9]+|[0-9]+\.[0-9]+}{[EDed][+-]?[0-9]+[\.]?|\.[0-9]+|[0-9]+\.[0-9]+}?
 %}
 
 %option yylineno
-
+digit [0-9]+
+fraction {digit}\.|\.{digit}|{digit}\.{digit}
+exponent {digit}|{digit}\.|\.{digit}|{digit}\.{digit}
+fp {fraction}|{exponent}[eE][+-]?{exponent}
+complex {fp}j|{digit}j
 %%
-[0-9]+ { yylval.i_value = strtol(yytext, NULL, 10); return INTEGER;}
-[0-9]+\.[EDed][+-][0-9]+ { yylval.f_value = strtof(yytext, NULL); return FLOAT;}
-\.[0-9]+[EDed][+-][0-9]+ { yylval.f_value = strtof(yytext, NULL); return FLOAT;}
-[0-9]+\.[0-9]+[EDed][+-][0-9]+ { yylval.f_value = strtof(yytext, NULL); return FLOAT;}
+{digit} { yylval.i_value = strtol(yytext, NULL, 10); return INTEGER;}
+{fp} { yylval.f_value = strtof(yytext, NULL); return FLOAT;}
+{complex} { yytext[strlen(yytext) - 1] = 0; yylval.f_value = strtof(yytext, NULL); return COMPLEX;}
 [-+*/%=\^] return *yytext;
 [\n\r] return EOL;
 "?"    return QUESTION;
