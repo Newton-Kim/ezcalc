@@ -1,5 +1,5 @@
 bin_PROGRAMS=ezcalc
-ezcalc_SOURCES=main.cc parse.yy scan.ll procstack.cc
+ezcalc_SOURCES=main.cc parse.yy scan.ll procstack.cc math/ecmath.cc io/ecio.cc
 ezcalc_LDADD=-lezvm
 AM_CPPFLAGS=-I../../include -std=c++11
 BUILT_SOURCES=parse.hh

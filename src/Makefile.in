@@ -104,8 +104,9 @@ CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 am__installdirs = "$(DESTDIR)$(bindir)"
 PROGRAMS = $(bin_PROGRAMS)
+am__dirstamp = $(am__leading_dot)dirstamp
 am_ezcalc_OBJECTS = main.$(OBJEXT) parse.$(OBJEXT) scan.$(OBJEXT) \
-	procstack.$(OBJEXT)
+	procstack.$(OBJEXT) math/ecmath.$(OBJEXT) io/ecio.$(OBJEXT)
 ezcalc_OBJECTS = $(am_ezcalc_OBJECTS)
 ezcalc_DEPENDENCIES =
 AM_V_lt = $(am__v_lt_@AM_V@)
@@ -336,7 +337,7 @@ target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-ezcalc_SOURCES = main.cc parse.yy scan.ll procstack.cc
+ezcalc_SOURCES = main.cc parse.yy scan.ll procstack.cc math/ecmath.cc io/ecio.cc
 ezcalc_LDADD = -lezvm
 AM_CPPFLAGS = -I../../include -std=c++11
 BUILT_SOURCES = parse.hh
@@ -428,6 +429,21 @@ clean-binPROGRAMS:
 parse.hh: parse.cc
 	@if test ! -f $@; then rm -f parse.cc; else :; fi
 	@if test ! -f $@; then $(MAKE) $(AM_MAKEFLAGS) parse.cc; else :; fi
+math/$(am__dirstamp):
+	@$(MKDIR_P) math
+	@: > math/$(am__dirstamp)
+math/$(DEPDIR)/$(am__dirstamp):
+	@$(MKDIR_P) math/$(DEPDIR)
+	@: > math/$(DEPDIR)/$(am__dirstamp)
+math/ecmath.$(OBJEXT): math/$(am__dirstamp) \
+	math/$(DEPDIR)/$(am__dirstamp)
+io/$(am__dirstamp):
+	@$(MKDIR_P) io
+	@: > io/$(am__dirstamp)
+io/$(DEPDIR)/$(am__dirstamp):
+	@$(MKDIR_P) io/$(DEPDIR)
+	@: > io/$(DEPDIR)/$(am__dirstamp)
+io/ecio.$(OBJEXT): io/$(am__dirstamp) io/$(DEPDIR)/$(am__dirstamp)
 
 ezcalc$(EXEEXT): $(ezcalc_OBJECTS) $(ezcalc_DEPENDENCIES) $(EXTRA_ezcalc_DEPENDENCIES) 
 	@rm -f ezcalc$(EXEEXT)
@@ -435,6 +451,8 @@ ezcalc$(EXEEXT): $(ezcalc_OBJECTS) $(ezcalc_DEPENDENCIES) $(EXTRA_ezcalc_DEPENDE
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
+	-rm -f io/*.$(OBJEXT)
+	-rm -f math/*.$(OBJEXT)
 
 distclean-compile:
 	-rm -f *.tab.c
@@ -443,6 +461,8 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/parse.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/procstack.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/scan.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@io/$(DEPDIR)/ecio.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@math/$(DEPDIR)/ecmath.Po@am__quote@
 
 .cc.o:
 @am__fastdepCXX_TRUE@	$(AM_V_CXX)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.o$$||'`;\
@@ -598,6 +618,10 @@ clean-generic:
 distclean-generic:
 	-test -z "$(CONFIG_CLEAN_FILES)" || rm -f $(CONFIG_CLEAN_FILES)
 	-test . = "$(srcdir)" || test -z "$(CONFIG_CLEAN_VPATH_FILES)" || rm -f $(CONFIG_CLEAN_VPATH_FILES)
+	-rm -f io/$(DEPDIR)/$(am__dirstamp)
+	-rm -f io/$(am__dirstamp)
+	-rm -f math/$(DEPDIR)/$(am__dirstamp)
+	-rm -f math/$(am__dirstamp)
 
 maintainer-clean-generic:
 	@echo "This command is intended for maintainers to use"
@@ -611,7 +635,7 @@ clean: clean-am
 clean-am: clean-binPROGRAMS clean-generic clean-libtool mostlyclean-am
 
 distclean: distclean-am
-	-rm -rf ./$(DEPDIR)
+	-rm -rf ./$(DEPDIR) io/$(DEPDIR) math/$(DEPDIR)
 	-rm -f Makefile
 distclean-am: clean-am distclean-compile distclean-generic \
 	distclean-tags
@@ -657,7 +681,7 @@ install-ps-am:
 installcheck-am:
 
 maintainer-clean: maintainer-clean-am
-	-rm -rf ./$(DEPDIR)
+	-rm -rf ./$(DEPDIR) io/$(DEPDIR) math/$(DEPDIR)
 	-rm -f Makefile
 maintainer-clean-am: distclean-am maintainer-clean-generic
 

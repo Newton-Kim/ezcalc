@@ -1,5 +1,7 @@
 %{
 #include "procstack.h"
+#include "io/ecio.h"
+#include "math/ecmath.h"
 #include <ezvm/ezvm.h>
 #include <iostream>
 #include <cstddef>
@@ -120,6 +122,11 @@ expr : INTEGER { $$.segment = EZ_ASM_SEGMENT_CONSTANT; $$.offset = s_vm.assemble
 	| FLOAT { $$.segment = EZ_ASM_SEGMENT_CONSTANT; $$.offset = s_vm.assembler().constant($1); }
 	| COMPLEX { $$.segment = EZ_ASM_SEGMENT_CONSTANT; $$.offset = s_vm.assembler().constant(complex<double>(0,$1)); }
 	| STRING { $$.segment = EZ_ASM_SEGMENT_CONSTANT; $$.offset = s_vm.assembler().constant($1); }
+	| SYMBOL '(' exprs ')' {
+		ezAsmProcedure* proc = s_proc_stack.func();
+		ezAddress func(EZ_ASM_SEGMENT_GLOBAL, s_vm.assembler().global($1)); 
+		proc->call(func, s_proc_stack.args(), s_proc_stack.addrs());
+	}
 	| var {$$ = $1;}
 	| expr '+' expr {
 		$$.segment = EZ_ASM_SEGMENT_LOCAL;
@@ -166,7 +173,17 @@ expr : INTEGER { $$.segment = EZ_ASM_SEGMENT_CONSTANT; $$.offset = s_vm.assemble
 	;
 %%
 
+void load_functions(void) {
+	char **symtab = NULL;
+	ezValue **constant = NULL;
+	ecIO::load(&symtab, &constant);
+	s_vm.assembler().load_intrinsics(symtab, constant);
+	ecMath::load(&symtab, &constant);
+	s_vm.assembler().load_intrinsics(symtab, constant);
+}
+
 void run_it(void) {
+  load_functions();
   s_prompt = true;
   s_vm.assembler().entry(EZC_ENTRY);
   ezAsmProcedure* proc = s_vm.assembler().new_proc(EZC_ENTRY, 0, 256, -1, -1);
@@ -176,6 +193,7 @@ void run_it(void) {
 }
 
 void run_it(string source) {
+  load_functions();
   extern FILE* yyin;
   s_prompt = false;
   yyin = fopen(source.c_str(), "rb");
