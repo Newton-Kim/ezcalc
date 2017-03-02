@@ -7,13 +7,13 @@ private:
   class ProcStackItem {
    public:
     ezAsmProcedure* m_proc;
-    vector <ezAddress> m_args;
-    vector <ezAddress> m_addrs;
+    stack<vector <ezAddress> > m_args;
+    stack<vector <ezAddress> > m_addrs;
     size_t m_local;
     size_t m_temp;
     size_t m_temp_max;
    public:
-    ProcStackItem(ezAsmProcedure* proc) : m_proc(proc), m_local(0), m_temp(0) {}
+    ProcStackItem(ezAsmProcedure* proc) : m_proc(proc), m_local(0), m_temp(0), m_temp_max(0) {}
     ~ProcStackItem() { m_proc->grow(m_local + m_temp_max); }
     size_t inc_temp(void) {
       m_temp++;
@@ -33,8 +33,8 @@ public:
   void push(ezAsmProcedure* proc);
   void clear(void);
   bool is_entry(void){ return m_proc_stack.top() == m_entry; }
-  vector <ezAddress>& args(void) {return m_proc_stack.top()->m_args;}
-  vector <ezAddress>& addrs(void) {return m_proc_stack.top()->m_addrs;}
+  stack<vector <ezAddress> >& args(void) {return m_proc_stack.top()->m_args;}
+  stack<vector <ezAddress> >& addrs(void) {return m_proc_stack.top()->m_addrs;}
   size_t inc_temp(void) { return m_proc_stack.top()->inc_temp();}
   size_t inc_local(void) { return m_proc_stack.top()->inc_local();}
   void reset_temp(void) { m_proc_stack.top()->reset_temp();}

@@ -57,7 +57,7 @@ program : %empty | program proc | program code {
 		}
 	};
 
-proc : FUNC SYMBOL '(' {s_proc_stack.args().clear();} args ')' { free($2); } '{' codes '}' EOL;
+proc : FUNC SYMBOL '(' {s_proc_stack.args().push(vector<ezAddress>());} args ')' { free($2); } '{' codes '}' EOL { s_proc_stack.args().pop(); };
 
 codes : %empty | codes code;
 
@@ -71,43 +71,49 @@ line : assignment
 
 quit : CMD_QUIT EOL {exit(0);};
 
-assignment : {s_proc_stack.addrs().clear(); }
-	vars '=' {s_proc_stack.args().clear();}
+assignment : {s_proc_stack.addrs().push(vector<ezAddress>()); }
+	vars '=' {s_proc_stack.args().push(vector<ezAddress>());}
 	exprs {
 		ezAsmProcedure* proc = s_proc_stack.func();
-		proc->mv(s_proc_stack.addrs(), s_proc_stack.args());
+		proc->mv(s_proc_stack.addrs().top(), s_proc_stack.args().top());
+		s_proc_stack.addrs().pop();
+		s_proc_stack.args().pop();
 	};
 
 print : cmd_print {
-		s_proc_stack.args().clear();
-		s_proc_stack.addrs().clear();
+		s_proc_stack.addrs().push(vector<ezAddress>());
+		s_proc_stack.args().push(vector<ezAddress>());
 	} exprs {
 		ezAsmProcedure* proc = s_proc_stack.func();
 		ezAddress func(EZ_ASM_SEGMENT_GLOBAL, s_vm.assembler().global(EZC_STDOUT)); 
-		proc->call(func, s_proc_stack.args(), s_proc_stack.addrs());
+		proc->call(func, s_proc_stack.args().top(), s_proc_stack.addrs().top());
+		s_proc_stack.addrs().pop();
+		s_proc_stack.args().pop();
 	};
 
 cmd_print : CMD_PRINT | QUESTION;
 
 err : CMD_ERROR {
-		s_proc_stack.args().clear();
-		s_proc_stack.addrs().clear();
+		s_proc_stack.addrs().push(vector<ezAddress>());
+		s_proc_stack.args().push(vector<ezAddress>());
 	} exprs {
 		ezAsmProcedure* proc = s_proc_stack.func();
 		ezAddress func(EZ_ASM_SEGMENT_GLOBAL, s_vm.assembler().global(EZC_STDERR)); 
-		proc->call(func, s_proc_stack.args(), s_proc_stack.addrs());
+		proc->call(func, s_proc_stack.args().top(), s_proc_stack.addrs().top());
+		s_proc_stack.addrs().pop();
+		s_proc_stack.args().pop();
 	};
 
 
 dump : CMD_DUMP {s_vm.dump().dump("stdout");}
 
 args : %empty | args ',' SYMBOL {
-		s_proc_stack.args().push_back(ezAddress(EZ_ASM_SEGMENT_GLOBAL, s_vm.assembler().global($3)));
+		s_proc_stack.args().top().push_back(ezAddress(EZ_ASM_SEGMENT_GLOBAL, s_vm.assembler().global($3)));
 		free($3);
 	};
 
-vars : var {s_proc_stack.addrs().push_back(ezAddress($1.segment, $1.offset));}
-	| vars ',' var {s_proc_stack.addrs().push_back(ezAddress($3.segment, $3.offset));};
+vars : var {s_proc_stack.addrs().top().push_back(ezAddress($1.segment, $1.offset));}
+	| vars ',' var {s_proc_stack.addrs().top().push_back(ezAddress($3.segment, $3.offset));};
 
 var : SYMBOL {
 		$$.segment = EZ_ASM_SEGMENT_GLOBAL;
@@ -115,17 +121,44 @@ var : SYMBOL {
 		free($1);
 	};
 
-exprs : expr {s_proc_stack.args().push_back(ezAddress($1.segment, $1.offset));}
-	| exprs ',' expr {s_proc_stack.args().push_back(ezAddress($3.segment, $3.offset));};
+exprs : expr {s_proc_stack.args().top().push_back(ezAddress($1.segment, $1.offset));}
+	| exprs ',' expr {s_proc_stack.args().top().push_back(ezAddress($3.segment, $3.offset));}
+	| exprs ',' SYMBOL {
+		vector<ezAddress> addr_arr = s_proc_stack.addrs().top();
+		size_t addrs = addr_arr.size();
+		size_t args = s_proc_stack.args().top().size();
+		s_proc_stack.args().push(vector<ezAddress>());
+		s_proc_stack.addrs().push(vector<ezAddress>());
+		cerr << addrs << ":" << args << endl;
+		for(size_t i = args ; i < addrs ; i++) {
+			ezAddress addr(EZ_ASM_SEGMENT_LOCAL, s_proc_stack.inc_temp());
+			s_proc_stack.addrs().top().push_back(addr);
+			addr_arr.push_back(addr);
+		}
+	} '(' exprs ')' {
+		ezAsmProcedure* proc = s_proc_stack.func();
+		ezAddress func(EZ_ASM_SEGMENT_GLOBAL, s_vm.assembler().global($3)); 
+		proc->call(func, s_proc_stack.args().top(), s_proc_stack.addrs().top());
+		s_proc_stack.args().pop();
+		s_proc_stack.addrs().pop();
+	};
 
 expr : INTEGER { $$.segment = EZ_ASM_SEGMENT_CONSTANT; $$.offset = s_vm.assembler().constant($1); }
 	| FLOAT { $$.segment = EZ_ASM_SEGMENT_CONSTANT; $$.offset = s_vm.assembler().constant($1); }
 	| COMPLEX { $$.segment = EZ_ASM_SEGMENT_CONSTANT; $$.offset = s_vm.assembler().constant(complex<double>(0,$1)); }
 	| STRING { $$.segment = EZ_ASM_SEGMENT_CONSTANT; $$.offset = s_vm.assembler().constant($1); }
-	| SYMBOL '(' exprs ')' {
+	| SYMBOL {
+		s_proc_stack.args().push(vector<ezAddress>());
+		s_proc_stack.addrs().push(vector<ezAddress>());
+	} '(' exprs ')' {
+		$$.segment = EZ_ASM_SEGMENT_LOCAL;
+		$$.offset = s_proc_stack.inc_temp();
+		s_proc_stack.addrs().top().push_back(ezAddress($$.segment, $$.offset));
 		ezAsmProcedure* proc = s_proc_stack.func();
 		ezAddress func(EZ_ASM_SEGMENT_GLOBAL, s_vm.assembler().global($1)); 
-		proc->call(func, s_proc_stack.args(), s_proc_stack.addrs());
+		proc->call(func, s_proc_stack.args().top(), s_proc_stack.addrs().top());
+		s_proc_stack.args().pop();
+		s_proc_stack.addrs().pop();
 	}
 	| var {$$ = $1;}
 	| expr '+' expr {

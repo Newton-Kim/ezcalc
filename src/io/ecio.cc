@@ -34,12 +34,12 @@ private:
 
 public:
   ecIoPrint(ostream &io);
-  void run(vector<ezValue *> &args, vector<ezValue *> &rets);
+  void run(ezGC& gc, vector<ezValue *> &args, vector<ezValue *> &rets);
 };
 
 ecIoPrint::ecIoPrint(ostream &io) : ezNativeCarousel(), m_io(io) {}
 
-void ecIoPrint::run(vector<ezValue *> &args, vector<ezValue *> &rets) {
+void ecIoPrint::run(ezGC& gc, vector<ezValue *> &args, vector<ezValue *> &rets) {
   rets.clear();
   stringstream ss;
   size_t len = args.size();
@@ -65,6 +65,9 @@ void ecIoPrint::run(vector<ezValue *> &args, vector<ezValue *> &rets) {
       break;
     case EZ_VALUE_TYPE_BOOL:
       ss << (((ezBool *)v)->to_bool() ? "true" : "false");
+      break;
+    case EZ_VALUE_TYPE_NULL:
+      ss << "nil";
       break;
     default:
       ss << hex << (void *)v << dec;
