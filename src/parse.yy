@@ -123,13 +123,12 @@ var : SYMBOL {
 
 exprs : expr {s_proc_stack.args().top().push_back(ezAddress($1.segment, $1.offset));}
 	| exprs ',' expr {s_proc_stack.args().top().push_back(ezAddress($3.segment, $3.offset));}
-	| exprs ',' SYMBOL {
+	| SYMBOL {
 		vector<ezAddress> addr_arr = s_proc_stack.addrs().top();
 		size_t addrs = addr_arr.size();
 		size_t args = s_proc_stack.args().top().size();
 		s_proc_stack.args().push(vector<ezAddress>());
 		s_proc_stack.addrs().push(vector<ezAddress>());
-		cerr << addrs << ":" << args << endl;
 		for(size_t i = args ; i < addrs ; i++) {
 			ezAddress addr(EZ_ASM_SEGMENT_LOCAL, s_proc_stack.inc_temp());
 			s_proc_stack.addrs().top().push_back(addr);
@@ -137,7 +136,7 @@ exprs : expr {s_proc_stack.args().top().push_back(ezAddress($1.segment, $1.offse
 		}
 	} '(' exprs ')' {
 		ezAsmProcedure* proc = s_proc_stack.func();
-		ezAddress func(EZ_ASM_SEGMENT_GLOBAL, s_vm.assembler().global($3)); 
+		ezAddress func(EZ_ASM_SEGMENT_GLOBAL, s_vm.assembler().global($1)); 
 		proc->call(func, s_proc_stack.args().top(), s_proc_stack.addrs().top());
 		s_proc_stack.args().pop();
 		s_proc_stack.addrs().pop();
