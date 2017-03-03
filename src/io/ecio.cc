@@ -67,7 +67,7 @@ void ecIoPrint::run(ezGC& gc, vector<ezValue *> &args, vector<ezValue *> &rets) 
       ss << (((ezBool *)v)->to_bool() ? "true" : "false");
       break;
     case EZ_VALUE_TYPE_NULL:
-      ss << "nil";
+//      ss << "nil";
       break;
     default:
       ss << hex << (void *)v << dec;

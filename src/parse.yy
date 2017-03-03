@@ -20,6 +20,8 @@ static bool s_prompt = false;
 #define EZC_ENTRY "main"
 #define EZC_STDOUT "stdout"
 #define EZC_STDERR "stderr"
+#define EZC_POW "pow"
+#define EZC_MAX_RETURN_VALUES 16
 %}
 
 %token STRING INTEGER FLOAT COMPLEX SYMBOL EOL BATATA FUNC QUESTION
@@ -42,7 +44,7 @@ static bool s_prompt = false;
 
 %start program
 
-%right '='
+%right '=' '^'
 %left '+' '-'
 %left '*' '/' '%'
 %%
@@ -124,21 +126,18 @@ var : SYMBOL {
 exprs : expr {s_proc_stack.args().top().push_back(ezAddress($1.segment, $1.offset));}
 	| exprs ',' expr {s_proc_stack.args().top().push_back(ezAddress($3.segment, $3.offset));}
 	| SYMBOL {
-		vector<ezAddress> addr_arr = s_proc_stack.addrs().top();
-		size_t addrs = addr_arr.size();
-		size_t args = s_proc_stack.args().top().size();
 		s_proc_stack.args().push(vector<ezAddress>());
 		s_proc_stack.addrs().push(vector<ezAddress>());
-		for(size_t i = args ; i < addrs ; i++) {
-			ezAddress addr(EZ_ASM_SEGMENT_LOCAL, s_proc_stack.inc_temp());
-			s_proc_stack.addrs().top().push_back(addr);
-			addr_arr.push_back(addr);
-		}
+		for(size_t i = 0 ; i < EZC_MAX_RETURN_VALUES ; i++) 
+			s_proc_stack.addrs().top().push_back(ezAddress(EZ_ASM_SEGMENT_LOCAL, s_proc_stack.inc_temp()));
 	} '(' exprs ')' {
 		ezAsmProcedure* proc = s_proc_stack.func();
 		ezAddress func(EZ_ASM_SEGMENT_GLOBAL, s_vm.assembler().global($1)); 
 		proc->call(func, s_proc_stack.args().top(), s_proc_stack.addrs().top());
 		s_proc_stack.args().pop();
+		vector<ezAddress>& addr = s_proc_stack.addrs().top();
+		for(size_t i = 0 ; i < addr.size() ; i++)
+			s_proc_stack.args().top().push_back(addr[i]);
 		s_proc_stack.addrs().pop();
 	};
 
@@ -194,6 +193,20 @@ expr : INTEGER { $$.segment = EZ_ASM_SEGMENT_CONSTANT; $$.offset = s_vm.assemble
 		ezAsmProcedure* func = s_proc_stack.func();
 		ezAddress lparam($1.segment, $1.offset), rparam($3.segment, $3.offset);
 		func->mod(ezAddress ($$.segment, $$.offset), lparam, rparam);
+	}
+	| expr '^' expr {
+		$$.segment = EZ_ASM_SEGMENT_LOCAL;
+		$$.offset = s_proc_stack.inc_temp();
+		ezAsmProcedure* proc = s_proc_stack.func();
+		ezAddress func(EZ_ASM_SEGMENT_GLOBAL, s_vm.assembler().global(EZC_POW)); 
+		s_proc_stack.args().push(vector<ezAddress>());
+		s_proc_stack.addrs().push(vector<ezAddress>());
+		s_proc_stack.args().top().push_back(ezAddress($1.segment, $1.offset));
+		s_proc_stack.args().top().push_back(ezAddress($3.segment, $3.offset));
+		s_proc_stack.addrs().top().push_back(ezAddress($$.segment, $$.offset));
+		proc->call(func, s_proc_stack.args().top(), s_proc_stack.addrs().top());
+		s_proc_stack.args().pop();
+		s_proc_stack.addrs().pop();
 	}
 	| '-' expr %prec BATATA {
 		$$.segment = EZ_ASM_SEGMENT_LOCAL;
