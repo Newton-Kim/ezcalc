@@ -1,6 +1,6 @@
 #include <ezvm/ezvm.h>
-#include <iostream>
 #include <getopt.h>
+#include <iostream>
 using namespace std;
 #define VERSION "1.0.0"
 
@@ -44,10 +44,12 @@ int main(int argc, char *argv[]) {
   if (version_flag)
     cout << VERSION << endl;
 
-  while(optind < argc) 
+  while (optind < argc)
     source = argv[optind++];
 
-  if(source.empty()) run_it();
-  else run_it(source);
+  if (source.empty())
+    run_it();
+  else
+    run_it(source);
   return 0;
 }

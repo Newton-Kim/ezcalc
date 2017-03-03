@@ -34,12 +34,13 @@ private:
 
 public:
   ecIoPrint(ostream &io);
-  void run(ezGC& gc, vector<ezValue *> &args, vector<ezValue *> &rets);
+  void run(ezGC &gc, vector<ezValue *> &args, vector<ezValue *> &rets);
 };
 
 ecIoPrint::ecIoPrint(ostream &io) : ezNativeCarousel(), m_io(io) {}
 
-void ecIoPrint::run(ezGC& gc, vector<ezValue *> &args, vector<ezValue *> &rets) {
+void ecIoPrint::run(ezGC &gc, vector<ezValue *> &args,
+                    vector<ezValue *> &rets) {
   rets.clear();
   stringstream ss;
   size_t len = args.size();
@@ -50,16 +51,15 @@ void ecIoPrint::run(ezGC& gc, vector<ezValue *> &args, vector<ezValue *> &rets) 
       ss << ((ezInteger *)v)->to_integer();
       break;
     case EZ_VALUE_TYPE_FLOAT:
-      ss << ((ezFloat*)v)->to_float();
+      ss << ((ezFloat *)v)->to_float();
       break;
-    case EZ_VALUE_TYPE_COMPLEX:
-      {
-        complex<double> c = ((ezComplex*)v)->to_complex();
-        ss << c.real();
-        if(c.imag() > 0) ss << "+";
-        ss << c.imag() << "j";
-      }
-      break;
+    case EZ_VALUE_TYPE_COMPLEX: {
+      complex<double> c = ((ezComplex *)v)->to_complex();
+      ss << c.real();
+      if (c.imag() > 0)
+        ss << "+";
+      ss << c.imag() << "j";
+    } break;
     case EZ_VALUE_TYPE_STRING:
       ss << ((ezString *)v)->to_string();
       break;
@@ -67,7 +67,7 @@ void ecIoPrint::run(ezGC& gc, vector<ezValue *> &args, vector<ezValue *> &rets) 
       ss << (((ezBool *)v)->to_bool() ? "true" : "false");
       break;
     case EZ_VALUE_TYPE_NULL:
-//      ss << "nil";
+      //      ss << "nil";
       break;
     default:
       ss << hex << (void *)v << dec;
