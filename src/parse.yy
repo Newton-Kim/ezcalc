@@ -26,6 +26,7 @@ static bool s_prompt = false;
 
 %token STRING INTEGER FLOAT COMPLEX SYMBOL EOL BATATA FUNC QUESTION
 %token CMD_PRINT CMD_ERROR CMD_QUIT CMD_DUMP
+%token TK_DO TK_WHILE TK_UNTIL TK_GE TK_LE TK_NE TK_EQ
 
 %type <s_value> SYMBOL STRING
 %type <i_value> INTEGER
@@ -61,7 +62,7 @@ program : %empty | program proc | program code {
 
 proc : FUNC SYMBOL '(' {s_proc_stack.args().push(vector<ezAddress>());} args ')' { free($2); } '{' codes '}' EOL { s_proc_stack.args().pop(); };
 
-codes : %empty | codes code;
+codes : code | codes code;
 
 code : EOL | line EOL {s_proc_stack.reset_temp();};
 
@@ -69,7 +70,10 @@ line : assignment
 	| print
 	| err
 	| dump
+	| do_while
 	| quit;
+
+do_while : TK_DO {} codes TK_WHILE '(' expr ')' {};
 
 quit : CMD_QUIT EOL {exit(0);};
 
@@ -208,6 +212,18 @@ expr : INTEGER { $$.segment = EZ_ASM_SEGMENT_CONSTANT; $$.offset = s_vm.assemble
 		s_proc_stack.args().pop();
 		s_proc_stack.addrs().pop();
 	}
+	| expr '>' expr {
+	}
+	| expr '<' expr {
+	}
+	| expr TK_GE expr {
+	}
+	| expr TK_LE expr {
+	}
+	| expr TK_NE expr {
+	}
+	| expr TK_EQ expr {
+	}
 	| '-' expr %prec BATATA {
 		$$.segment = EZ_ASM_SEGMENT_LOCAL;
 		$$.offset = s_proc_stack.inc_temp();
@@ -215,7 +231,7 @@ expr : INTEGER { $$.segment = EZ_ASM_SEGMENT_CONSTANT; $$.offset = s_vm.assemble
 		func->neg(ezAddress($$.segment, $$.offset), ezAddress($2.segment, $2.offset));
 	}
 	| '(' expr ')' {$$ = $2;}
-	;
+;
 %%
 
 void load_functions(void) {
