@@ -23,6 +23,16 @@ complex {fp}j|{digit}j
 ">=" return TK_GE;
 "!=" return TK_NE;
 "==" return TK_EQ;
+"and" return TK_AND;
+"or" return TK_OR;
+"xor" return TK_XOR;
+"true" { yylval.b_value = true; return BOOLEAN;}
+"false" { yylval.b_value = false; return BOOLEAN;}
+"end" return TK_END;
+"if" return TK_IF;
+"else" return TK_ELSE;
+"elif" return TK_ELIF;
+"for" return TK_ELIF;
 [\n\r] return EOL;
 "?"    return QUESTION;
 "print" {return CMD_PRINT;}

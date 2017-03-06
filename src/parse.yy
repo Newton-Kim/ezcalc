@@ -24,16 +24,18 @@ static bool s_prompt = false;
 #define EZC_MAX_RETURN_VALUES 16
 %}
 
-%token STRING INTEGER FLOAT COMPLEX SYMBOL EOL BATATA FUNC QUESTION
+%token STRING INTEGER FLOAT COMPLEX BOOLEAN SYMBOL EOL BATATA FUNC QUESTION
 %token CMD_PRINT CMD_ERROR CMD_QUIT CMD_DUMP
-%token TK_DO TK_WHILE TK_UNTIL TK_GE TK_LE TK_NE TK_EQ
+%token TK_DO TK_WHILE TK_UNTIL TK_IF TK_ELIF TK_ELSE TK_FOR TK_END TK_GE TK_LE TK_NE TK_EQ TK_AND TK_OR TK_XOR
 
 %type <s_value> SYMBOL STRING
 %type <i_value> INTEGER
+%type <b_value> BOOLEAN
 %type <f_value> FLOAT COMPLEX
-%type <a_value> expr var
+%type <a_value> expr lexpr var
 
 %union {
+	bool b_value;
 	int i_value;
 	double f_value;
 	char* s_value;
@@ -60,7 +62,7 @@ program : %empty | program proc | program code {
 		}
 	};
 
-proc : FUNC SYMBOL '(' {s_proc_stack.args().push(vector<ezAddress>());} args ')' { free($2); } '{' codes '}' EOL { s_proc_stack.args().pop(); };
+proc : FUNC SYMBOL '(' {s_proc_stack.args().push(vector<ezAddress>());} args ')' { free($2); }  codes TK_END EOL { s_proc_stack.args().pop(); };
 
 codes : code | codes code;
 
@@ -71,9 +73,20 @@ line : assignment
 	| err
 	| dump
 	| do_while
+	| while
+	| for
+	| if
 	| quit;
 
-do_while : TK_DO {} codes TK_WHILE '(' expr ')' {};
+for : TK_FOR '(' assignment ';' lexpr ';' assignment ')' codes TK_END
+
+do_while : TK_DO {} codes TK_WHILE '(' lexpr ')' {};
+
+while : TK_WHILE '(' lexpr ')'{} codes TK_END {};
+
+if : TK_IF '(' lexpr ')' codes elif TK_ELSE codes TK_END;
+
+elif : %empty | elif TK_ELIF '(' lexpr ')' codes;
 
 quit : CMD_QUIT EOL {exit(0);};
 
@@ -198,6 +211,27 @@ expr : INTEGER { $$.segment = EZ_ASM_SEGMENT_CONSTANT; $$.offset = s_vm.assemble
 		ezAddress lparam($1.segment, $1.offset), rparam($3.segment, $3.offset);
 		func->mod(ezAddress ($$.segment, $$.offset), lparam, rparam);
 	}
+	| expr TK_AND expr {
+		$$.segment = EZ_ASM_SEGMENT_LOCAL;
+		$$.offset = s_proc_stack.inc_temp();
+		ezAsmProcedure* func = s_proc_stack.func();
+		ezAddress lparam($1.segment, $1.offset), rparam($3.segment, $3.offset);
+		func->bitwise_and(ezAddress ($$.segment, $$.offset), lparam, rparam);
+	}
+	| expr TK_OR expr {
+		$$.segment = EZ_ASM_SEGMENT_LOCAL;
+		$$.offset = s_proc_stack.inc_temp();
+		ezAsmProcedure* func = s_proc_stack.func();
+		ezAddress lparam($1.segment, $1.offset), rparam($3.segment, $3.offset);
+		func->bitwise_or(ezAddress ($$.segment, $$.offset), lparam, rparam);
+	}
+	| expr TK_XOR expr {
+		$$.segment = EZ_ASM_SEGMENT_LOCAL;
+		$$.offset = s_proc_stack.inc_temp();
+		ezAsmProcedure* func = s_proc_stack.func();
+		ezAddress lparam($1.segment, $1.offset), rparam($3.segment, $3.offset);
+		func->bitwise_or(ezAddress ($$.segment, $$.offset), lparam, rparam);
+	}
 	| expr '^' expr {
 		$$.segment = EZ_ASM_SEGMENT_LOCAL;
 		$$.offset = s_proc_stack.inc_temp();
@@ -212,6 +246,15 @@ expr : INTEGER { $$.segment = EZ_ASM_SEGMENT_CONSTANT; $$.offset = s_vm.assemble
 		s_proc_stack.args().pop();
 		s_proc_stack.addrs().pop();
 	}
+	| '-' expr %prec BATATA {
+		$$.segment = EZ_ASM_SEGMENT_LOCAL;
+		$$.offset = s_proc_stack.inc_temp();
+		ezAsmProcedure* func = s_proc_stack.func();
+		func->neg(ezAddress($$.segment, $$.offset), ezAddress($2.segment, $2.offset));
+	}
+	| '(' expr ')' {$$ = $2;};
+
+lexpr : BOOLEAN { $$.segment = EZ_ASM_SEGMENT_CONSTANT; $$.offset = s_vm.assembler().constant($1); }
 	| expr '>' expr {
 	}
 	| expr '<' expr {
@@ -224,14 +267,13 @@ expr : INTEGER { $$.segment = EZ_ASM_SEGMENT_CONSTANT; $$.offset = s_vm.assemble
 	}
 	| expr TK_EQ expr {
 	}
-	| '-' expr %prec BATATA {
-		$$.segment = EZ_ASM_SEGMENT_LOCAL;
-		$$.offset = s_proc_stack.inc_temp();
-		ezAsmProcedure* func = s_proc_stack.func();
-		func->neg(ezAddress($$.segment, $$.offset), ezAddress($2.segment, $2.offset));
+	| lexpr TK_AND lexpr {
 	}
-	| '(' expr ')' {$$ = $2;}
-;
+	| lexpr TK_OR lexpr {
+	}
+	| lexpr TK_XOR lexpr {
+	}
+	| '(' lexpr ')' {};
 %%
 
 void load_functions(void) {
