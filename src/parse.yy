@@ -16,6 +16,7 @@ using namespace std;
 static ezVM s_vm;
 static ProcStack s_proc_stack;
 static bool s_prompt = false;
+static string s_label;
 
 #define EZC_ENTRY "main"
 #define EZC_STDOUT "stdout"
@@ -32,7 +33,7 @@ static bool s_prompt = false;
 %type <i_value> INTEGER
 %type <b_value> BOOLEAN
 %type <f_value> FLOAT COMPLEX
-%type <a_value> expr lexpr var
+%type <a_value> expr var
 
 %union {
 	bool b_value;
@@ -80,7 +81,18 @@ line : assignment
 
 for : TK_FOR '(' assignment ';' lexpr ';' assignment ')' codes TK_END
 
-do_while : TK_DO {} codes TK_WHILE '(' lexpr ')' {};
+do_while : TK_DO {
+		ezAsmProcedure* proc = s_proc_stack.func();
+		ecBlockDoWhile* blk = new ecBlockDoWhile;
+		proc->label(blk->label());
+		s_proc_stack.blocks().push(blk);
+		s_label = blk->label();
+	} codes TK_WHILE '(' lexpr ')'{
+		ecBlock* blk = s_proc_stack.blocks().top();
+		if(blk->type != EC_BLOCK_TYPE_DO_WHILE) throw runtime_error("do-while loop is incompleted");
+		s_proc_stack.blocks().pop();
+		s_label.clear();
+	};
 
 while : TK_WHILE '(' lexpr ')'{} codes TK_END {};
 
@@ -162,6 +174,7 @@ expr : INTEGER { $$.segment = EZ_ASM_SEGMENT_CONSTANT; $$.offset = s_vm.assemble
 	| FLOAT { $$.segment = EZ_ASM_SEGMENT_CONSTANT; $$.offset = s_vm.assembler().constant($1); }
 	| COMPLEX { $$.segment = EZ_ASM_SEGMENT_CONSTANT; $$.offset = s_vm.assembler().constant(complex<double>(0,$1)); }
 	| STRING { $$.segment = EZ_ASM_SEGMENT_CONSTANT; $$.offset = s_vm.assembler().constant($1); }
+	| BOOLEAN { $$.segment = EZ_ASM_SEGMENT_CONSTANT; $$.offset = s_vm.assembler().constant($1); }
 	| SYMBOL {
 		s_proc_stack.args().push(vector<ezAddress>());
 		s_proc_stack.addrs().push(vector<ezAddress>());
@@ -254,18 +267,41 @@ expr : INTEGER { $$.segment = EZ_ASM_SEGMENT_CONSTANT; $$.offset = s_vm.assemble
 	}
 	| '(' expr ')' {$$ = $2;};
 
-lexpr : BOOLEAN { $$.segment = EZ_ASM_SEGMENT_CONSTANT; $$.offset = s_vm.assembler().constant($1); }
-	| expr '>' expr {
+lexpr : expr '>' expr {
+		ezAsmProcedure* proc = s_proc_stack.func();
+		ezAddress cond(EZ_ASM_SEGMENT_LOCAL, s_proc_stack.inc_temp());
+		proc->cmp(cond, ezAddress($3.segment, $3.offset), ezAddress($1.segment, $1.offset));
+		proc->blt(cond, s_label);
 	}
 	| expr '<' expr {
+		ezAsmProcedure* proc = s_proc_stack.func();
+		ezAddress cond(EZ_ASM_SEGMENT_LOCAL, s_proc_stack.inc_temp());
+		proc->cmp(cond, ezAddress($1.segment, $1.offset), ezAddress($3.segment, $3.offset));
+		proc->blt(cond, s_label);
 	}
 	| expr TK_GE expr {
+		ezAsmProcedure* proc = s_proc_stack.func();
+		ezAddress cond(EZ_ASM_SEGMENT_LOCAL, s_proc_stack.inc_temp());
+		proc->cmp(cond, ezAddress($1.segment, $1.offset), ezAddress($3.segment, $3.offset));
+		proc->bge(cond, s_label);
 	}
 	| expr TK_LE expr {
+		ezAsmProcedure* proc = s_proc_stack.func();
+		ezAddress cond(EZ_ASM_SEGMENT_LOCAL, s_proc_stack.inc_temp());
+		proc->cmp(cond, ezAddress($3.segment, $3.offset), ezAddress($1.segment, $1.offset));
+		proc->bge(cond, s_label);
 	}
 	| expr TK_NE expr {
+		ezAsmProcedure* proc = s_proc_stack.func();
+		ezAddress cond(EZ_ASM_SEGMENT_LOCAL, s_proc_stack.inc_temp());
+		proc->cmp(cond, ezAddress($1.segment, $1.offset), ezAddress($3.segment, $3.offset));
+		proc->bne(cond, s_label);
 	}
 	| expr TK_EQ expr {
+		ezAsmProcedure* proc = s_proc_stack.func();
+		ezAddress cond(EZ_ASM_SEGMENT_LOCAL, s_proc_stack.inc_temp());
+		proc->cmp(cond, ezAddress($1.segment, $1.offset), ezAddress($3.segment, $3.offset));
+		proc->beq(cond, s_label);
 	}
 	| lexpr TK_AND lexpr {
 	}

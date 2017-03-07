@@ -106,7 +106,8 @@ am__installdirs = "$(DESTDIR)$(bindir)"
 PROGRAMS = $(bin_PROGRAMS)
 am__dirstamp = $(am__leading_dot)dirstamp
 am_ezcalc_OBJECTS = main.$(OBJEXT) parse.$(OBJEXT) scan.$(OBJEXT) \
-	procstack.$(OBJEXT) math/ecmath.$(OBJEXT) io/ecio.$(OBJEXT)
+	procstack.$(OBJEXT) block.$(OBJEXT) math/ecmath.$(OBJEXT) \
+	io/ecio.$(OBJEXT)
 ezcalc_OBJECTS = $(am_ezcalc_OBJECTS)
 ezcalc_DEPENDENCIES =
 AM_V_lt = $(am__v_lt_@AM_V@)
@@ -337,7 +338,7 @@ target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-ezcalc_SOURCES = main.cc parse.yy scan.ll procstack.cc math/ecmath.cc io/ecio.cc
+ezcalc_SOURCES = main.cc parse.yy scan.ll procstack.cc block.cc math/ecmath.cc io/ecio.cc
 ezcalc_LDADD = -lezvm
 AM_CPPFLAGS = -I../../include -std=c++11
 BUILT_SOURCES = parse.hh
@@ -457,6 +458,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/block.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/main.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/parse.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/procstack.Po@am__quote@

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "block.h"
 #include <ezvm/ezvm.h>
 
 class ProcStack {
@@ -9,6 +10,7 @@ private:
     ezAsmProcedure *m_proc;
     stack<vector<ezAddress>> m_args;
     stack<vector<ezAddress>> m_addrs;
+    stack<ecBlock*> m_blocks;
     size_t m_local;
     size_t m_temp;
     size_t m_temp_max;
@@ -39,6 +41,7 @@ public:
   bool is_entry(void) { return m_proc_stack.top() == m_entry; }
   stack<vector<ezAddress>> &args(void) { return m_proc_stack.top()->m_args; }
   stack<vector<ezAddress>> &addrs(void) { return m_proc_stack.top()->m_addrs; }
+  stack<ecBlock*> &blocks(void) {return m_proc_stack.top()->m_blocks;}
   size_t inc_temp(void) { return m_proc_stack.top()->inc_temp(); }
   size_t inc_local(void) { return m_proc_stack.top()->inc_local(); }
   void reset_temp(void) { m_proc_stack.top()->reset_temp(); }
