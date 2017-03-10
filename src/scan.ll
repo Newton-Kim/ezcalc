@@ -18,14 +18,14 @@ complex {fp}j|{digit}j
 {digit} { yylval.i_value = strtol(yytext, NULL, 10); return INTEGER;}
 {fp} { yylval.f_value = strtof(yytext, NULL); return FLOAT;}
 {complex} { yytext[strlen(yytext) - 1] = 0; yylval.f_value = strtof(yytext, NULL); return COMPLEX;}
-[-+*/%=\^\{\}<>,()] return *yytext;
+[-+*/%=\^\{\}<>,()&|] return *yytext;
 "<=" return TK_LE;
 ">=" return TK_GE;
 "!=" return TK_NE;
 "==" return TK_EQ;
-"and" return TK_AND;
-"or" return TK_OR;
-"xor" return TK_XOR;
+"&&" return TK_AND;
+"||" return TK_OR;
+"**" return TK_POW;
 "true" { yylval.b_value = true; return BOOLEAN;}
 "false" { yylval.b_value = false; return BOOLEAN;}
 "end" return TK_END;

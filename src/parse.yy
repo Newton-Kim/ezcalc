@@ -65,7 +65,7 @@ static void compare(ezAddress result, ezAddress larg, ezAddress rarg, function<v
 
 %start program
 
-%right '=' '^'
+%right '=' TK_POW
 %%
 program : %empty | program proc | program code {
 		if(s_prompt) {
@@ -240,7 +240,7 @@ unary_expr : primary_expr {$$ = $1;}
 		func->neg(ezAddress($$.segment, $$.offset), ezAddress($2.segment, $2.offset));
 	};
 exponential_expr : unary_expr {$$=$1;}
-	| unary_expr '^' unary_expr {
+	| unary_expr TK_POW unary_expr {
 		$$.segment = EZ_ASM_SEGMENT_LOCAL;
 		$$.offset = s_proc_stack.inc_temp();
 		ezAsmProcedure* proc = s_proc_stack.func();
@@ -347,7 +347,7 @@ equality_expr : relational_expr {$$=$1;}
 	};
 
 and_expr : equality_expr {$$=$1;}
-	| and_expr TK_AND equality_expr {
+	| and_expr '&' equality_expr {
 		$$.segment = EZ_ASM_SEGMENT_LOCAL;
 		$$.offset = s_proc_stack.inc_temp();
 		ezAsmProcedure* func = s_proc_stack.func();
@@ -356,7 +356,7 @@ and_expr : equality_expr {$$=$1;}
 	};
 
 xor_expr : and_expr {$$=$1;}
-	| xor_expr TK_XOR and_expr {
+	| xor_expr '^' and_expr {
 		$$.segment = EZ_ASM_SEGMENT_LOCAL;
 		$$.offset = s_proc_stack.inc_temp();
 		ezAsmProcedure* func = s_proc_stack.func();
@@ -365,7 +365,7 @@ xor_expr : and_expr {$$=$1;}
 	}
 
 or_expr : xor_expr {$$=$1;}
-	| or_expr TK_OR xor_expr {
+	| or_expr '|' xor_expr {
 		$$.segment = EZ_ASM_SEGMENT_LOCAL;
 		$$.offset = s_proc_stack.inc_temp();
 		ezAsmProcedure* func = s_proc_stack.func();
@@ -374,11 +374,53 @@ or_expr : xor_expr {$$=$1;}
 	};
 
 logical_and_expr : or_expr {$$=$1;}
-	| logical_and_expr TK_AND or_expr {
+	| logical_and_expr {
+		ecBlockIf* blk = new ecBlockIf(s_count++);
+		s_proc_stack.blocks().push(blk);
+		ezAsmProcedure* proc = s_proc_stack.func();
+		ezAddress cond(EZ_ASM_SEGMENT_LOCAL, s_proc_stack.inc_temp());
+		proc->cmp(cond, ezAddress($1.segment, $1.offset), ezAddress(EZ_ASM_SEGMENT_CONSTANT, s_vm.assembler().constant(true)));
+		proc->bne(cond, blk->label_else());
+	} TK_AND or_expr {
+		$$.segment = EZ_ASM_SEGMENT_LOCAL;
+		$$.offset = s_proc_stack.inc_temp();
+		ezAddress cond(EZ_ASM_SEGMENT_LOCAL, s_proc_stack.inc_temp());
+		ecBlock* blk = s_proc_stack.blocks().top();
+		if(blk->type != EC_BLOCK_TYPE_IF) throw runtime_error("block mismatch");
+		ezAsmProcedure* proc = s_proc_stack.func();
+		ezAddress result($$.segment, $$.offset), rarg($4.segment, $4.offset), vf(EZ_ASM_SEGMENT_CONSTANT, s_vm.assembler().constant(false));
+		proc->mv(result, rarg);
+		proc->bra(((ecBlockIf*)blk)->label_end());
+		proc->label(((ecBlockIf*)blk)->label_else());
+		proc->mv(result, vf);
+		proc->label(((ecBlockIf*)blk)->label_end());
+		s_proc_stack.blocks().pop();
+		delete blk;
 	};
 
 logical_or_expr : logical_and_expr {$$=$1;}
-	| logical_or_expr TK_OR or_expr {
+	| logical_or_expr {
+		ecBlockIf* blk = new ecBlockIf(s_count++);
+		s_proc_stack.blocks().push(blk);
+		ezAsmProcedure* proc = s_proc_stack.func();
+		ezAddress cond(EZ_ASM_SEGMENT_LOCAL, s_proc_stack.inc_temp());
+		proc->cmp(cond, ezAddress($1.segment, $1.offset), ezAddress(EZ_ASM_SEGMENT_CONSTANT, s_vm.assembler().constant(true)));
+		proc->beq(cond, blk->label_else());
+	} TK_OR or_expr {
+		$$.segment = EZ_ASM_SEGMENT_LOCAL;
+		$$.offset = s_proc_stack.inc_temp();
+		ezAddress cond(EZ_ASM_SEGMENT_LOCAL, s_proc_stack.inc_temp());
+		ecBlock* blk = s_proc_stack.blocks().top();
+		if(blk->type != EC_BLOCK_TYPE_IF) throw runtime_error("block mismatch");
+		ezAsmProcedure* proc = s_proc_stack.func();
+		ezAddress result($$.segment, $$.offset), rarg($4.segment, $4.offset), vt(EZ_ASM_SEGMENT_CONSTANT, s_vm.assembler().constant(true));
+		proc->mv(result, rarg);
+		proc->bra(((ecBlockIf*)blk)->label_end());
+		proc->label(((ecBlockIf*)blk)->label_else());
+		proc->mv(result, vt);
+		proc->label(((ecBlockIf*)blk)->label_end());
+		s_proc_stack.blocks().pop();
+		delete blk;
 	}
 %%
 
