@@ -1,0 +1,15 @@
+Source: ezcalc
+Section: utils
+Priority: optional
+Maintainer: newton <newton.s.kim@gmail.com>
+Build-Depends: debhelper (>=9),autotools-dev
+Standards-Version: 3.9.8
+Homepage: https://sourceforge.net/projects/ezcalc
+#Vcs-Git: git://anonscm.debian.org/collab-maint/ezcalc.git
+#Vcs-Browser: https://anonscm.debian.org/cgit/collab-maint/ezcalc.git
+
+Package: ezcalc
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: <insert up to 60 chars description>
+ <insert long description, indented with spaces>

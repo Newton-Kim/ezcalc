@@ -1,0 +1,5 @@
+ezcalc (1.0.0-1) unstable; urgency=medium
+
+  * Initial release (Closes: #nnnn)  <nnnn is the bug number of your ITP>
+
+ -- newton <newton.s.kim@gmail.com>  Tue, 14 Mar 2017 03:35:13 +0900
