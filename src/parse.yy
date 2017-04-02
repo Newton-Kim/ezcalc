@@ -8,7 +8,9 @@
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
+
 #define YYDEBUG 1
+#define USE_EQUALITY_API
 
 int yylex();
 void yyerror (char const *s);
@@ -26,6 +28,7 @@ static bool s_do_dump = false;
 #define EZC_POW "pow"
 #define EZC_MAX_RETURN_VALUES 16
 
+#ifndef USE_EQUALITY_API
 static void compare(ezAddress result, ezAddress larg, ezAddress rarg, function<void(ezAsmProcedure* proc, ezAddress, string label)> func) {
 	ezAsmProcedure* proc = s_proc_stack.func();
 	ecBlockIf blk(s_count++);
@@ -39,6 +42,7 @@ static void compare(ezAddress result, ezAddress larg, ezAddress rarg, function<v
 	proc->mv(result, vf);
 	proc->label(blk.label_end());
 }
+#endif //USE_EQUALITY_API
 
 %}
 
@@ -299,33 +303,53 @@ relational_expr : additive_expr { $$ = $1; }
 		$$.segment = EZ_ASM_SEGMENT_LOCAL;
 		$$.offset = s_proc_stack.inc_temp();
 		ezAddress tf($$.segment, $$.offset);
+#ifdef USE_EQUALITY_API
+		ezAsmProcedure* proc = s_proc_stack.func();
+		proc->tlt(tf, ezAddress($3.segment, $3.offset), ezAddress($1.segment, $1.offset)); 
+#else //USE_EQUALITY_API
 		compare(tf, ezAddress($3.segment, $3.offset), ezAddress($1.segment, $1.offset),
 			[&](ezAsmProcedure* proc, ezAddress cond, string label){ proc->bge(cond, label); }
 		);
+#endif //USE_EQUALITY_API
 	}
 	| relational_expr '<' additive_expr {
 		$$.segment = EZ_ASM_SEGMENT_LOCAL;
 		$$.offset = s_proc_stack.inc_temp();
 		ezAddress tf($$.segment, $$.offset);
+#ifdef USE_EQUALITY_API
+		ezAsmProcedure* proc = s_proc_stack.func();
+		proc->tlt(tf, ezAddress($1.segment, $1.offset), ezAddress($3.segment, $3.offset)); 
+#else //USE_EQUALITY_API
 		compare(tf, ezAddress($1.segment, $1.offset), ezAddress($3.segment, $3.offset),
 			[&](ezAsmProcedure* proc, ezAddress cond, string label){ proc->bge(cond, label); }
 		);
+#endif //USE_EQUALITY_API
 	}
 	| relational_expr TK_GE additive_expr {
 		$$.segment = EZ_ASM_SEGMENT_LOCAL;
 		$$.offset = s_proc_stack.inc_temp();
 		ezAddress tf($$.segment, $$.offset);
+#ifdef USE_EQUALITY_API
+		ezAsmProcedure* proc = s_proc_stack.func();
+		proc->tge(tf, ezAddress($1.segment, $1.offset), ezAddress($3.segment, $3.offset)); 
+#else //USE_EQUALITY_API
 		compare(tf, ezAddress($1.segment, $1.offset), ezAddress($3.segment, $3.offset),
 			[&](ezAsmProcedure* proc, ezAddress cond, string label){ proc->blt(cond, label); }
 		);
+#endif //USE_EQUALITY_API
 	}
 	| relational_expr TK_LE additive_expr {
 		$$.segment = EZ_ASM_SEGMENT_LOCAL;
 		$$.offset = s_proc_stack.inc_temp();
 		ezAddress tf($$.segment, $$.offset);
+#ifdef USE_EQUALITY_API
+		ezAsmProcedure* proc = s_proc_stack.func();
+		proc->tge(tf, ezAddress($3.segment, $3.offset), ezAddress($1.segment, $1.offset)); 
+#else //USE_EQUALITY_API
 		compare(tf, ezAddress($3.segment, $3.offset), ezAddress($1.segment, $1.offset),
 			[&](ezAsmProcedure* proc, ezAddress cond, string label){ proc->blt(cond, label); }
 		);
+#endif //USE_EQUALITY_API
 	};
 
 equality_expr : relational_expr {$$=$1;}
@@ -333,17 +357,27 @@ equality_expr : relational_expr {$$=$1;}
 		$$.segment = EZ_ASM_SEGMENT_LOCAL;
 		$$.offset = s_proc_stack.inc_temp();
 		ezAddress tf($$.segment, $$.offset);
+#ifdef USE_EQUALITY_API
+		ezAsmProcedure* proc = s_proc_stack.func();
+		proc->tne(tf, ezAddress($1.segment, $1.offset), ezAddress($3.segment, $3.offset)); 
+#else //USE_EQUALITY_API
 		compare(tf, ezAddress($1.segment, $1.offset), ezAddress($3.segment, $3.offset),
 			[&](ezAsmProcedure* proc, ezAddress cond, string label){ proc->beq(cond, label); }
 		);
+#endif //USE_EQUALITY_API
 	}
 	| equality_expr TK_EQ relational_expr {
 		$$.segment = EZ_ASM_SEGMENT_LOCAL;
 		$$.offset = s_proc_stack.inc_temp();
 		ezAddress tf($$.segment, $$.offset);
+#ifdef USE_EQUALITY_API
+		ezAsmProcedure* proc = s_proc_stack.func();
+		proc->teq(tf, ezAddress($1.segment, $1.offset), ezAddress($3.segment, $3.offset)); 
+#else //USE_EQUALITY_API
 		compare(tf, ezAddress($1.segment, $1.offset), ezAddress($3.segment, $3.offset),
 			[&](ezAsmProcedure* proc, ezAddress cond, string label){ proc->bne(cond, label); }
 		);
+#endif //USE_EQUALITY_API
 	};
 
 and_expr : equality_expr {$$=$1;}
