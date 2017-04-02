@@ -1,8 +1,7 @@
 #include "ecmath.h"
 #include <functional>
 
-inline void mathf_1arg(vector<ezValue *> &args,
-                       vector<ezValue *> &rets,
+inline void mathf_1arg(vector<ezValue *> &args, vector<ezValue *> &rets,
                        function<ezValue *(ezValue *)> funcf,
                        function<ezValue *(ezValue *)> funcc) {
   rets.clear();

@@ -1,7 +1,7 @@
 #pragma once
 
-#include <string>
 #include <sstream>
+#include <string>
 
 using namespace std;
 
@@ -13,31 +13,33 @@ enum ecBlockType {
 };
 
 class ecBlock {
-  public:
-    const ecBlockType type;
-    ecBlock(ecBlockType tp);
-    virtual ~ecBlock(){};
+public:
+  const ecBlockType type;
+  ecBlock(ecBlockType tp);
+  virtual ~ecBlock(){};
 };
 
 class ecBlockDoWhile : public ecBlock {
-  private:
-    string m_begin;
-    string m_end;
-  public:
-    ecBlockDoWhile(size_t count);
-    ~ecBlockDoWhile();
-    string label_begin(void) { return m_begin; }
-    string label_end(void) { return m_end; }
+private:
+  string m_begin;
+  string m_end;
+
+public:
+  ecBlockDoWhile(size_t count);
+  ~ecBlockDoWhile();
+  string label_begin(void) { return m_begin; }
+  string label_end(void) { return m_end; }
 };
 
 class ecBlockIf : public ecBlock {
-  private:
-    string m_else;
-    string m_end;
-  public:
-    ecBlockIf(size_t count);
-    ecBlockIf(size_t count, string end);
-    ~ecBlockIf();
-    string label_else(void) { return m_else; }
-    string label_end(void) { return m_end; }
+private:
+  string m_else;
+  string m_end;
+
+public:
+  ecBlockIf(size_t count);
+  ecBlockIf(size_t count, string end);
+  ~ecBlockIf();
+  string label_else(void) { return m_else; }
+  string label_end(void) { return m_end; }
 };

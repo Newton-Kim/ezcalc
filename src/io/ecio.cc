@@ -39,8 +39,7 @@ public:
 
 ecIoPrint::ecIoPrint(ostream &io) : ezNativeCarousel(), m_io(io) {}
 
-void ecIoPrint::run(vector<ezValue *> &args,
-                    vector<ezValue *> &rets) {
+void ecIoPrint::run(vector<ezValue *> &args, vector<ezValue *> &rets) {
   rets.clear();
   stringstream ss;
   size_t len = args.size();
@@ -78,7 +77,8 @@ void ecIoPrint::run(vector<ezValue *> &args,
 }
 
 void ecIO::load(char ***symtab, ezValue ***constants) {
-  static ecIoPrint *io_stdout = new ecIoPrint(cout), *io_stderr = new ecIoPrint(cerr);
+  static ecIoPrint *io_stdout = new ecIoPrint(cout),
+                   *io_stderr = new ecIoPrint(cerr);
   static const char *io_symtab[] = {"stdout", "stderr", NULL};
   static ezValue *io_constants[] = {io_stdout, io_stderr, NULL};
   *symtab = (char **)io_symtab;
