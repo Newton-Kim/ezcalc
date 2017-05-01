@@ -1,0 +1,18 @@
+#!/bin/bash
+
+TC_DIR=../share/ezcalc
+EZCALC=../src/ezas/ezcalc
+
+for f in `ls $TC_DIR`
+do
+	echo $f...
+	$EZCALC $TC_DIR/$f > /tmp/$f.out
+	if [ -z `diff $f.outref /tmp/$f.out` ]
+	then
+		echo pass
+		rm /tmp/$f.out
+	else
+		echo fail
+		diff $f.outref /tmp/$f.out
+	fi
+done

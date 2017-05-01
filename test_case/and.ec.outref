@@ -1,0 +1,6 @@
+1 and 2 == 0
+3 and 4 == 0
+true and false == false
+false and true == false
+false and false == false
+true and true == true
