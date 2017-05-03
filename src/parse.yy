@@ -488,11 +488,11 @@ void run_it(string source) {
   s_proc_stack.push(proc);
   yyparse();
   s_proc_stack.clear();
-  s_vm.run();
   if(s_do_dump) {
     s_vm.dump().dump("stdout");
     s_do_dump = false;
   }
+  s_vm.run();
 }
 
 void yyerror (char const *s) {
