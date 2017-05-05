@@ -45,6 +45,8 @@ void ecIoPrint::run(vector<ezValue *> &args, vector<ezValue *> &rets) {
   size_t len = args.size();
   for (size_t i = 0; i < len; i++) {
     ezValue *v = args[i];
+    if (!v)
+      continue;
     switch (v->type) {
     case EZ_VALUE_TYPE_INTEGER:
       ss << ((ezInteger *)v)->to_integer();
@@ -54,14 +56,16 @@ void ecIoPrint::run(vector<ezValue *> &args, vector<ezValue *> &rets) {
       break;
     case EZ_VALUE_TYPE_COMPLEX: {
       complex<double> c = ((ezComplex *)v)->to_complex();
-      if(c.real())
+      if (c.real())
         ss << c.real();
       if (c.imag() > 0) {
-        if(c.real()) ss << "+";
-        ss  << c.imag() << "j";
+        if (c.real())
+          ss << "+";
+        ss << c.imag() << "j";
       } else if (c.imag() > 0) {
-        if(c.real()) ss << "-";
-        ss  << c.imag() << "j";
+        if (c.real())
+          ss << "-";
+        ss << c.imag() << "j";
       }
     } break;
     case EZ_VALUE_TYPE_STRING:
