@@ -17,7 +17,7 @@ ecBlockDoWhile::ecBlockDoWhile(size_t count) : ecBlock(EC_BLOCK_TYPE_DO_WHILE) {
 
 ecBlockDoWhile::~ecBlockDoWhile() {}
 
-ecBlockIf::ecBlockIf(size_t count) : ecBlock(EC_BLOCK_TYPE_DO_WHILE) {
+ecBlockIf::ecBlockIf(size_t count) : ecBlock(EC_BLOCK_TYPE_IF) {
   {
     stringstream ss;
     ss << "L_if_else_" << count;
