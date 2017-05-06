@@ -207,7 +207,12 @@ err : CMD_ERROR {
 
 dump : CMD_DUMP {s_do_dump = true;}
 
-args : %empty | args ',' SYMBOL {
+args : %empty
+	| SYMBOL {
+		s_proc_stack.args().top().push_back(ezAddress(EZ_ASM_SEGMENT_GLOBAL, s_vm.assembler().global($1)));
+		free($1);
+	}
+	| args ',' SYMBOL {
 		s_proc_stack.args().top().push_back(ezAddress(EZ_ASM_SEGMENT_GLOBAL, s_vm.assembler().global($3)));
 		free($3);
 	};

@@ -13,7 +13,7 @@ e="hello"
 f="world"
 g=e+f
 ? g,"=",e,"+",f
-h="I"+"am"+"Sam"
+h="I "+"am "+"Sam"
 ? h
 if (h == "")
   ? h, " is zero string"
