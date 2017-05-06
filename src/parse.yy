@@ -141,9 +141,33 @@ do_while : TK_DO {
 		s_proc_stack.blocks().pop();
 	};
 
-if : TK_IF '(' logical_or_expr ')' codes elif TK_ELSE codes TK_END;
-
-elif : %empty | elif TK_ELIF '(' logical_or_expr ')' codes;
+if : TK_IF {
+		ezAsmProcedure* proc = s_proc_stack.func();
+		ecBlockIf* blk = new ecBlockIf(s_count++);
+		s_proc_stack.blocks().push(blk);
+	} '(' logical_or_expr ')' {
+		ezAsmProcedure* proc = s_proc_stack.func();
+		ecBlock* blk = s_proc_stack.blocks().top();
+		if(blk->type != EC_BLOCK_TYPE_IF) throw runtime_error("if statement is incompleted");
+		ezAddress cond(EZ_ASM_SEGMENT_LOCAL, s_proc_stack.inc_temp());
+		proc->cmp(cond, ezAddress(EZ_ASM_SEGMENT_CONSTANT, s_vm.assembler().constant(true)), ezAddress($4.segment, $4.offset));
+		proc->bne(cond, ((ecBlockIf*)blk)->label_else());
+	} codes {
+		ezAsmProcedure* proc = s_proc_stack.func();
+		ecBlock* blk = s_proc_stack.blocks().top();
+		if(blk->type != EC_BLOCK_TYPE_IF) throw runtime_error("if statement is incompleted");
+		proc->bra(((ecBlockDoWhile*)blk)->label_end());
+	} TK_ELSE {
+		ezAsmProcedure* proc = s_proc_stack.func();
+		ecBlock* blk = s_proc_stack.blocks().top();
+		if(blk->type != EC_BLOCK_TYPE_IF) throw runtime_error("if statement is incompleted");
+		proc->label(((ecBlockIf*)blk)->label_else());
+	} codes TK_END {
+		ezAsmProcedure* proc = s_proc_stack.func();
+		ecBlock* blk = s_proc_stack.blocks().top();
+		if(blk->type != EC_BLOCK_TYPE_IF) throw runtime_error("if statement is incompleted");
+		proc->label(((ecBlockIf*)blk)->label_end());
+	};
 
 quit : CMD_QUIT EOL {exit(0);};
 
