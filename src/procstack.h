@@ -25,7 +25,7 @@ private:
         m_temp_max = m_temp;
       return m_temp - 1;
     }
-    size_t inc_local(void) { return m_local++; }
+    void set_local(size_t local) { if (m_local < local) m_local = local; }
     void reset_temp(void) { m_temp = m_local; }
   };
   ProcStackItem *m_entry;
@@ -43,6 +43,6 @@ public:
   stack<vector<ezAddress>> &addrs(void) { return m_proc_stack.top()->m_addrs; }
   stack<ecBlock *> &blocks(void) { return m_proc_stack.top()->m_blocks; }
   size_t inc_temp(void) { return m_proc_stack.top()->inc_temp(); }
-  size_t inc_local(void) { return m_proc_stack.top()->inc_local(); }
+  void set_local(size_t local) { m_proc_stack.top()->set_local(local); }
   void reset_temp(void) { m_proc_stack.top()->reset_temp(); }
 };

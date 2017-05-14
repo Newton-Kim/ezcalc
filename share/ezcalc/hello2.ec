@@ -1,4 +1,5 @@
 func printf(msg)
   ? msg
 end
-printf("hello world")
+call printf("hello world")
+dump

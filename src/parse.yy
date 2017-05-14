@@ -48,7 +48,7 @@ static void compare(ezAddress result, ezAddress larg, ezAddress rarg, function<v
 
 %token STRING INTEGER FLOAT COMPLEX BOOLEAN SYMBOL EOL BATATA FUNC QUESTION
 %token CMD_PRINT CMD_ERROR CMD_QUIT CMD_DUMP
-%token TK_DO TK_WHILE TK_UNTIL TK_IF TK_ELIF TK_ELSE TK_FOR TK_END TK_GE TK_LE TK_NE TK_EQ TK_AND TK_OR TK_XOR
+%token TK_CALL TK_DO TK_WHILE TK_UNTIL TK_IF TK_ELIF TK_ELSE TK_FOR TK_END TK_GE TK_LE TK_NE TK_EQ TK_AND TK_OR TK_XOR
 
 %type <s_value> SYMBOL STRING
 %type <i_value> INTEGER
@@ -95,6 +95,7 @@ code : EOL | line EOL {s_proc_stack.reset_temp();};
 line : assignment
 	| print
 	| err
+	| call
 	| dump
 	| do_while
 	| for
@@ -204,6 +205,20 @@ err : CMD_ERROR {
 		s_proc_stack.args().pop();
 	};
 
+call : TK_CALL SYMBOL {
+		ezAsmProcedure* proc = s_vm.assembler().new_proc($2, 0, 0, -1, -1);
+		s_proc_stack.push(proc);
+		s_proc_stack.addrs().push(vector<ezAddress>());
+		s_proc_stack.args().push(vector<ezAddress>());
+	} exprs {
+		ezAsmProcedure* proc = s_proc_stack.func();
+		ezAddress func(EZ_ASM_SEGMENT_GLOBAL, s_vm.assembler().global($2)); 
+		proc->call(func, s_proc_stack.args().top(), s_proc_stack.addrs().top());
+		s_proc_stack.addrs().pop();
+		s_proc_stack.args().pop();
+		s_proc_stack.pop();
+		free($2);
+	};
 
 dump : CMD_DUMP {s_do_dump = true;}
 
@@ -213,8 +228,15 @@ vars : var {s_proc_stack.addrs().top().push_back(ezAddress($1.segment, $1.offset
 	| vars ',' var {s_proc_stack.addrs().top().push_back(ezAddress($3.segment, $3.offset));};
 
 var : SYMBOL {
-		$$.segment = EZ_ASM_SEGMENT_GLOBAL;
-		$$.offset = s_vm.assembler().global($1);
+		if(s_proc_stack.is_entry() || s_vm.assembler().is_global($1)) {
+			$$.segment = EZ_ASM_SEGMENT_GLOBAL;
+			$$.offset = s_vm.assembler().global($1);
+		} else {
+			ezAsmProcedure* proc = s_proc_stack.func();
+			$$.segment = EZ_ASM_SEGMENT_LOCAL;
+			$$.offset = proc->local($1);
+			s_proc_stack.set_local($$.offset);
+		}
 		free($1);
 	};
 
