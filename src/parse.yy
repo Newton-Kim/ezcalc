@@ -80,13 +80,26 @@ program : %empty | program proc | program code {
 				s_do_dump = false;
 			}
 			s_vm.assembler().reset(EZC_ENTRY);
-			ezAsmProcedure* proc = s_vm.assembler().new_proc(EZC_ENTRY, 0, 0, -1, -1);
+			ezAsmProcedure* proc = s_vm.assembler().new_proc(EZC_ENTRY, -1, -1);
 			s_proc_stack.push(proc);
 			cout << "> ";
 		}
 	};
 
-proc : FUNC SYMBOL '(' {s_proc_stack.args().push(vector<ezAddress>());} args ')' { free($2); }  codes TK_END EOL { s_proc_stack.args().pop(); };
+proc : FUNC SYMBOL '(' {
+		ezAsmProcedure* proc = s_vm.assembler().new_proc($2, -1, -1);
+		s_proc_stack.push(proc);
+		s_proc_stack.addrs().push(vector<ezAddress>());
+		s_proc_stack.args().push(vector<ezAddress>());
+	} args ')' {
+		ezAsmProcedure* proc = s_proc_stack.func();
+		proc->args(s_proc_stack.args().top().size());
+		free($2);
+	}  codes TK_END EOL {
+		s_proc_stack.addrs().pop();
+		s_proc_stack.args().pop();
+		s_proc_stack.pop();
+	};
 
 codes : code | codes code;
 
@@ -206,17 +219,14 @@ err : CMD_ERROR {
 	};
 
 call : TK_CALL SYMBOL {
-		ezAsmProcedure* proc = s_vm.assembler().new_proc($2, 0, 0, -1, -1);
-		s_proc_stack.push(proc);
-		s_proc_stack.addrs().push(vector<ezAddress>());
 		s_proc_stack.args().push(vector<ezAddress>());
+		s_proc_stack.addrs().push(vector<ezAddress>());
 	} exprs {
 		ezAsmProcedure* proc = s_proc_stack.func();
 		ezAddress func(EZ_ASM_SEGMENT_GLOBAL, s_vm.assembler().global($2)); 
 		proc->call(func, s_proc_stack.args().top(), s_proc_stack.addrs().top());
-		s_proc_stack.addrs().pop();
 		s_proc_stack.args().pop();
-		s_proc_stack.pop();
+		s_proc_stack.addrs().pop();
 		free($2);
 	};
 
@@ -514,7 +524,8 @@ void run_it(void) {
   load_functions();
   s_prompt = true;
   s_vm.assembler().entry(EZC_ENTRY);
-  ezAsmProcedure* proc = s_vm.assembler().new_proc(EZC_ENTRY, 0, 256, -1, -1);
+  ezAsmProcedure* proc = s_vm.assembler().new_proc(EZC_ENTRY, -1, -1);
+  proc->mems(256);
   s_proc_stack.push(proc);
   cout << "> ";
   yyparse();
@@ -527,7 +538,8 @@ void run_it(string source) {
   yyin = fopen(source.c_str(), "rb");
   if(!yyin) throw runtime_error(strerror(errno));
   s_vm.assembler().entry(EZC_ENTRY);
-  ezAsmProcedure* proc = s_vm.assembler().new_proc(EZC_ENTRY, 0, 256, -1, -1);
+  ezAsmProcedure* proc = s_vm.assembler().new_proc(EZC_ENTRY, -1, -1);
+  proc->mems(256);
   s_proc_stack.push(proc);
   yyparse();
   s_proc_stack.clear();

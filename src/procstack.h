@@ -18,7 +18,7 @@ private:
   public:
     ProcStackItem(ezAsmProcedure *proc)
         : m_proc(proc), m_local(0), m_temp(0), m_temp_max(0) {}
-    ~ProcStackItem() { m_proc->grow(m_local + m_temp_max); }
+    ~ProcStackItem() { m_proc->mems(m_local + m_temp_max); }
     size_t inc_temp(void) {
       m_temp++;
       if (m_temp_max < m_temp)
