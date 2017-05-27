@@ -44,6 +44,7 @@ complex {fp}j|{digit}j
 "do"   {return TK_DO;}
 "while"   {return TK_WHILE;}
 "until"   {return TK_UNTIL;}
+"return"   {return TK_RETURN;}
 [_a-zA-Z][_a-zA-Z0-9]* { yylval.s_value = strdup(yytext); return SYMBOL;}
 #.* {}
 [ \t] {}

@@ -48,7 +48,7 @@ static void compare(ezAddress result, ezAddress larg, ezAddress rarg, function<v
 
 %token STRING INTEGER FLOAT COMPLEX BOOLEAN SYMBOL EOL BATATA FUNC QUESTION
 %token CMD_PRINT CMD_ERROR CMD_QUIT CMD_DUMP
-%token TK_CALL TK_DO TK_WHILE TK_UNTIL TK_IF TK_ELIF TK_ELSE TK_FOR TK_END TK_GE TK_LE TK_NE TK_EQ TK_AND TK_OR TK_XOR
+%token TK_CALL TK_DO TK_WHILE TK_UNTIL TK_IF TK_ELIF TK_ELSE TK_FOR TK_END TK_GE TK_LE TK_NE TK_EQ TK_AND TK_OR TK_XOR TK_RETURN
 
 %type <s_value> SYMBOL STRING
 %type <i_value> INTEGER
@@ -113,7 +113,16 @@ line : assignment
 	| do_while
 	| for
 	| if
+	| return
 	| quit;
+
+return : TK_RETURN {
+		s_proc_stack.args().push(vector<ezAddress>());
+	} exprs {
+		ezAsmProcedure* proc = s_proc_stack.func();
+		proc->ret(s_proc_stack.args().top());
+		s_proc_stack.args().pop();
+	}
 
 for : TK_FOR '(' assignment ';' logical_or_expr ';' assignment ')' codes TK_END
 
@@ -221,7 +230,7 @@ err : CMD_ERROR {
 call : TK_CALL SYMBOL {
 		s_proc_stack.args().push(vector<ezAddress>());
 		s_proc_stack.addrs().push(vector<ezAddress>());
-	} exprs {
+	} args {
 		ezAsmProcedure* proc = s_proc_stack.func();
 		ezAddress func(EZ_ASM_SEGMENT_GLOBAL, s_vm.assembler().global($2)); 
 		proc->call(func, s_proc_stack.args().top(), s_proc_stack.addrs().top());
@@ -257,7 +266,7 @@ exprs : logical_or_expr {s_proc_stack.args().top().push_back(ezAddress($1.segmen
 		s_proc_stack.addrs().push(vector<ezAddress>());
 		for(size_t i = 0 ; i < EZC_MAX_RETURN_VALUES ; i++) 
 			s_proc_stack.addrs().top().push_back(ezAddress(EZ_ASM_SEGMENT_LOCAL, s_proc_stack.inc_temp()));
-	} '(' exprs ')' {
+	} '(' args ')' {
 		ezAsmProcedure* proc = s_proc_stack.func();
 		ezAddress func(EZ_ASM_SEGMENT_GLOBAL, s_vm.assembler().global($1)); 
 		proc->call(func, s_proc_stack.args().top(), s_proc_stack.addrs().top());
@@ -276,7 +285,7 @@ primary_expr : INTEGER { $$.segment = EZ_ASM_SEGMENT_CONSTANT; $$.offset = s_vm.
 	| SYMBOL {
 		s_proc_stack.args().push(vector<ezAddress>());
 		s_proc_stack.addrs().push(vector<ezAddress>());
-	} '(' exprs ')' {
+	} '(' args ')' {
 		$$.segment = EZ_ASM_SEGMENT_LOCAL;
 		$$.offset = s_proc_stack.inc_temp();
 		s_proc_stack.addrs().top().push_back(ezAddress($$.segment, $$.offset));
