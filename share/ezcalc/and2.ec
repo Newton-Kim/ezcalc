@@ -7,7 +7,7 @@ else ? c," is zero value"
 end
 a=true
 b=false
-c=a & b
+c=a && b
 if (c == true) ? c," is true"
 else ? c," is false"
 end
