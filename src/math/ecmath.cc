@@ -2,6 +2,7 @@
 #include <functional>
 
 inline void mathf_1arg(vector<ezValue *> &args, vector<ezValue *> &rets,
+                       function<ezValue *(ezInteger *)> funci,
                        function<ezValue *(ezFloat *)> funcf,
                        function<ezValue *(ezComplex *)> funcc) {
   rets.clear();
@@ -9,6 +10,8 @@ inline void mathf_1arg(vector<ezValue *> &args, vector<ezValue *> &rets,
     runtime_error("sin function has no argument.");
   switch (args[0]->type) {
   case EZ_VALUE_TYPE_INTEGER:
+    rets.push_back(funci((ezInteger*)args[0]));
+    break;
   case EZ_VALUE_TYPE_FLOAT:
     rets.push_back(funcf((ezFloat*)args[0]));
     break;
@@ -27,6 +30,7 @@ public:
   void run(vector<ezValue *> &args, vector<ezValue *> &rets) {
     mathf_1arg(
         args, rets,
+        [](ezInteger *arg) { return new ezInteger(sin(arg->value)); },
         [](ezFloat *arg) { return new ezFloat(sin(arg->value)); },
         [](ezComplex *arg) { return new ezComplex(sin(arg->value)); });
   }
@@ -37,6 +41,7 @@ public:
   void run(vector<ezValue *> &args, vector<ezValue *> &rets) {
     mathf_1arg(
         args, rets,
+        [](ezInteger *arg) { return new ezInteger(cos(arg->value)); },
         [](ezFloat *arg) { return new ezFloat(cos(arg->value)); },
         [](ezComplex *arg) { return new ezComplex(cos(arg->value)); });
   }
@@ -47,6 +52,7 @@ public:
   void run(vector<ezValue *> &args, vector<ezValue *> &rets) {
     mathf_1arg(
         args, rets,
+        [](ezInteger *arg) { return new ezInteger(tan(arg->value)); },
         [](ezFloat *arg) { return new ezFloat(tan(arg->value)); },
         [](ezComplex *arg) { return new ezComplex(tan(arg->value)); });
   }
@@ -57,6 +63,7 @@ public:
   void run(vector<ezValue *> &args, vector<ezValue *> &rets) {
     mathf_1arg(
         args, rets,
+        [](ezInteger *arg) { return new ezInteger(sinh(arg->value)); },
         [](ezFloat *arg) { return new ezFloat(sinh(arg->value)); },
         [](ezComplex *arg) { return new ezComplex(sinh(arg->value)); });
   }
@@ -67,6 +74,7 @@ public:
   void run(vector<ezValue *> &args, vector<ezValue *> &rets) {
     mathf_1arg(
         args, rets,
+        [](ezInteger *arg) { return new ezInteger(cosh(arg->value)); },
         [](ezFloat *arg) { return new ezFloat(cosh(arg->value)); },
         [](ezComplex *arg) { return new ezComplex(cosh(arg->value)); });
   }
@@ -77,6 +85,7 @@ public:
   void run(vector<ezValue *> &args, vector<ezValue *> &rets) {
     mathf_1arg(
         args, rets,
+        [](ezInteger *arg) { return new ezInteger(tanh(arg->value)); },
         [](ezFloat *arg) { return new ezFloat(tanh(arg->value)); },
         [](ezComplex *arg) { return new ezComplex(tanh(arg->value)); });
   }
@@ -87,6 +96,7 @@ public:
   void run(vector<ezValue *> &args, vector<ezValue *> &rets) {
     mathf_1arg(
         args, rets,
+        [](ezInteger *arg) { return new ezInteger(asin(arg->value)); },
         [](ezFloat *arg) { return new ezFloat(asin(arg->value)); },
         [](ezComplex *arg) { return new ezComplex(asin(arg->value)); });
   }
@@ -97,6 +107,7 @@ public:
   void run(vector<ezValue *> &args, vector<ezValue *> &rets) {
     mathf_1arg(
         args, rets,
+        [](ezInteger *arg) { return new ezInteger(acos(arg->value)); },
         [](ezFloat *arg) { return new ezFloat(acos(arg->value)); },
         [](ezComplex *arg) { return new ezComplex(acos(arg->value)); });
   }
@@ -107,6 +118,7 @@ public:
   void run(vector<ezValue *> &args, vector<ezValue *> &rets) {
     mathf_1arg(
         args, rets,
+        [](ezInteger *arg) { return new ezInteger(atan(arg->value)); },
         [](ezFloat *arg) { return new ezFloat(atan(arg->value)); },
         [](ezComplex *arg) { return new ezComplex(atan(arg->value)); });
   }
@@ -117,6 +129,7 @@ public:
   void run(vector<ezValue *> &args, vector<ezValue *> &rets) {
     mathf_1arg(
         args, rets,
+        [](ezInteger *arg) { return new ezInteger(log10(arg->value)); },
         [](ezFloat *arg) { return new ezFloat(log10(arg->value)); },
         [](ezComplex *arg) { return new ezComplex(log10(arg->value)); });
   }
@@ -127,6 +140,7 @@ public:
   void run(vector<ezValue *> &args, vector<ezValue *> &rets) {
     mathf_1arg(
         args, rets,
+        [](ezInteger *arg) { return new ezInteger(log(arg->value)); },
         [](ezFloat *arg) { return new ezFloat(log(arg->value)); },
         [](ezComplex *arg) { return new ezComplex(log(arg->value)); });
   }
@@ -137,6 +151,12 @@ public:
   void run(vector<ezValue *> &args, vector<ezValue *> &rets) {
     mathf_1arg(
         args, rets,
+        [](ezInteger *arg) {
+          double v = arg->value;
+          return (v >= 0)
+                     ? (ezValue *)new ezFloat(sqrt(v))
+                     : (ezValue *)new ezComplex(complex<double>(0, sqrt(-v)));
+        },
         [](ezFloat *arg) {
           double v = arg->value;
           return (v >= 0)
