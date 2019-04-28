@@ -1,4 +1,5 @@
 func printf(msg)
-  ? msg
+  exclamation="!"
+  ? msg,"!"
 end
 call printf("hello world")
