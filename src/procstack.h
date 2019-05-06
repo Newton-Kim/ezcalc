@@ -11,14 +11,24 @@ private:
     stack<vector<ezAddress>> m_args;
     stack<vector<ezAddress>> m_addrs;
     stack<ecBlock *> m_blocks;
+    stack<ezAsmInstruction *> m_instrs;
     size_t m_local;
     size_t m_temp;
     size_t m_temp_max;
 
   public:
     ProcStackItem(ezAsmProcedure *proc)
-        : m_proc(proc), m_local(0), m_temp(0), m_temp_max(0) {}
-    ~ProcStackItem() { m_proc->mems(m_local + m_temp_max); }
+        : m_proc(proc), m_local(0), m_temp(0), m_temp_max(0) {
+      m_instrs.push(new ezAsmInstruction);
+    }
+    ~ProcStackItem() {
+      if(!m_instrs.empty()) {
+        ezAsmInstruction *instr = m_instrs.top();
+        m_proc->append_instruction(instr);
+        m_instrs.pop();
+      }
+      m_proc->mems(m_local + m_temp_max);
+    }
     size_t inc_temp(void) {
       m_temp++;
       if (m_temp_max < m_temp)
@@ -35,6 +45,7 @@ public:
   ProcStack() : m_entry(NULL) {}
   ~ProcStack() { clear(); }
   ezAsmProcedure *func(void) { return m_proc_stack.top()->m_proc; }
+  stack<ezAsmInstruction *> &instr(void) { return m_proc_stack.top()->m_instrs; }
   void pop(void);
   void push(ezAsmProcedure *proc);
   void clear(void);
