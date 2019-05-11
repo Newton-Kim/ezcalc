@@ -85,11 +85,13 @@ void ecIoPrint::run(vector<ezValue *> &args, vector<ezValue *> &rets) {
   m_io << ss.str();
 }
 
-void ecIO::load(char ***symtab, ezValue ***constants) {
+ezIntrinsicTable *ecIO::load(void) {
   static ecIoPrint *io_stdout = new ecIoPrint(cout),
                    *io_stderr = new ecIoPrint(cerr);
-  static const char *io_symtab[] = {"stdout", "stderr", NULL};
-  static ezValue *io_constants[] = {io_stdout, io_stderr, NULL};
-  *symtab = (char **)io_symtab;
-  *constants = io_constants;
+  static ezIntrinsicTable io_symtab[] = {
+    {"stdout", io_stdout},
+    {"stderr", io_stderr},
+    {NULL, NULL}
+  };
+  return io_symtab;
 }

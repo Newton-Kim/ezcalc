@@ -557,12 +557,10 @@ logical_or_expr : logical_and_expr {$$=$1;}
 %%
 
 void load_functions(void) {
-	char **symtab = NULL;
-	ezValue **constant = NULL;
-	ecIO::load(&symtab, &constant);
-	s_vm.assembler().load_intrinsics(symtab, constant);
-	ecMath::load(&symtab, &constant);
-	s_vm.assembler().load_intrinsics(symtab, constant);
+	ezIntrinsicTable *symtab = ecIO::load();
+	s_vm.assembler().load_intrinsics(symtab);
+	ezIntrinsicTable *mathtab = ecMath::load();
+	s_vm.assembler().load_intrinsics(mathtab);
 }
 
 void run_it(void) {

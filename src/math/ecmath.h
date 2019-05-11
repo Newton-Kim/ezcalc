@@ -17,9 +17,9 @@
 *
 */
 #pragma once
-#include "ezvm/ezval.h"
+#include "ezvm/ezvm.h"
 
 class ecMath {
 public:
-  static void load(char ***symtab, ezValue ***constants);
+  static ezIntrinsicTable *load(void);
 };

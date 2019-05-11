@@ -194,7 +194,7 @@ public:
   }
 };
 
-void ecMath::load(char ***symtab, ezValue ***constants) {
+ezIntrinsicTable *ecMath::load(void) {
   static ezNull *ezNull = ezNull::instance();
   static ezFloat *ezPi = new ezFloat(M_PI), *ezExp = new ezFloat(exp(1));
   static ecSin *math_sin = new ecSin;
@@ -210,13 +210,24 @@ void ecMath::load(char ***symtab, ezValue ***constants) {
   static ecLog10 *math_log10 = new ecLog10;
   static ecSqrt *math_sqrt = new ecSqrt;
   static ecAbs *math_abs = new ecAbs;
-  static const char *math_symtab[] = {
-      "null", "pi",   "e",    "sin", "cos",   "tan",  "sinh", "cosh", "tanh",
-      "asin", "acos", "atan", "log", "log10", "sqrt", "abs",  NULL};
-  static ezValue *math_constants[] = {
-      ezNull,    ezPi,       ezExp,     math_sin,  math_cos,  math_tan,
-      math_sinh, math_cosh,  math_tanh, math_asin, math_acos, math_atan,
-      math_log,  math_log10, math_sqrt, math_abs,  NULL};
-  *symtab = (char **)math_symtab;
-  *constants = math_constants;
+  static ezIntrinsicTable math_symtab[] = {
+      {"null", ezNull},
+      {"pi", ezPi},
+      {"e", ezExp},
+      {"sin", math_sin},
+      {"cos", math_cos},
+      {"tan", math_tan},
+      {"sinh", math_sinh},
+      {"cosh", math_cosh},
+      {"tanh", math_tanh},
+      {"asin", math_asin},
+      {"acos", math_acos},
+      {"atan", math_atan},
+      {"log", math_log},
+      {"log10", math_log10},
+      {"sqrt", math_sqrt},
+      {"abs", math_abs},
+      {NULL, NULL}
+  };
+  return math_symtab;
 }
