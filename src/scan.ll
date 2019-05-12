@@ -26,6 +26,13 @@ complex {fp}j|{digit}j
 "&&" return TK_AND;
 "||" return TK_OR;
 "**" return TK_POW;
+"+=" return TK_ADD_TO;
+"-=" return TK_SUB_TO;
+"*=" return TK_MUL_TO;
+"/=" return TK_DIV_TO;
+"%=" return TK_MOD_TO;
+"++" return TK_INCREASE;
+"--" return TK_DECREASE;
 "call" return TK_CALL;
 "true" { yylval.b_value = true; return BOOLEAN;}
 "false" { yylval.b_value = false; return BOOLEAN;}

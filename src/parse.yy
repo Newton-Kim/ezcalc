@@ -49,6 +49,7 @@ static void compare(ezAddress result, ezAddress larg, ezAddress rarg, function<v
 %token STRING INTEGER FLOAT COMPLEX BOOLEAN SYMBOL EOL BATATA FUNC QUESTION
 %token CMD_PRINT CMD_ERROR CMD_QUIT CMD_DUMP
 %token TK_CALL TK_DO TK_WHILE TK_UNTIL TK_IF TK_ELIF TK_ELSE TK_FOR TK_END TK_GE TK_LE TK_NE TK_EQ TK_AND TK_OR TK_XOR TK_RETURN
+%token TK_ADD_TO TK_SUB_TO TK_MUL_TO TK_DIV_TO TK_MOD_TO TK_INCREASE TK_DECREASE
 
 %type <s_value> SYMBOL STRING
 %type <i_value> INTEGER
@@ -205,14 +206,51 @@ if : TK_IF {
 quit : CMD_QUIT EOL {exit(0);};
 
 assignment : {s_proc_stack.addrs().push(vector<ezAddress>()); }
-	vars '=' {s_proc_stack.args().push(vector<ezAddress>());}
-	exprs {
+	vars
+	assigner
+
+assigner: '=' {s_proc_stack.args().push(vector<ezAddress>());} exprs {
 		ezAsmProcedure* proc = s_proc_stack.func();
 		ezAsmInstruction* instr = s_proc_stack.instr().top();
 		instr->mv(s_proc_stack.addrs().top(), s_proc_stack.args().top());
 		s_proc_stack.addrs().pop();
 		s_proc_stack.args().pop();
-	};
+	}
+	| TK_ADD_TO additive_expr {
+		ezAsmInstruction* instr = s_proc_stack.instr().top();
+		vector<ezAddress> assignee = s_proc_stack.addrs().top();
+		if(assignee.empty()) throw runtime_error("no assignee");
+		instr->add(assignee.front(), assignee.front(), ezAddress($2.segment, $2.offset));
+		s_proc_stack.addrs().pop();
+	}
+	| TK_SUB_TO additive_expr {
+		ezAsmInstruction* instr = s_proc_stack.instr().top();
+		vector<ezAddress> assignee = s_proc_stack.addrs().top();
+		if(assignee.empty()) throw runtime_error("no assignee");
+		instr->sub(assignee.front(), assignee.front(), ezAddress($2.segment, $2.offset));
+		s_proc_stack.addrs().pop();
+	}
+	| TK_MUL_TO additive_expr {
+		ezAsmInstruction* instr = s_proc_stack.instr().top();
+		vector<ezAddress> assignee = s_proc_stack.addrs().top();
+		if(assignee.empty()) throw runtime_error("no assignee");
+		instr->mul(assignee.front(), assignee.front(), ezAddress($2.segment, $2.offset));
+		s_proc_stack.addrs().pop();
+	}
+	| TK_DIV_TO additive_expr {
+		ezAsmInstruction* instr = s_proc_stack.instr().top();
+		vector<ezAddress> assignee = s_proc_stack.addrs().top();
+		if(assignee.empty()) throw runtime_error("no assignee");
+		instr->div(assignee.front(), assignee.front(), ezAddress($2.segment, $2.offset));
+		s_proc_stack.addrs().pop();
+	}
+	| TK_MOD_TO additive_expr {
+		ezAsmInstruction* instr = s_proc_stack.instr().top();
+		vector<ezAddress> assignee = s_proc_stack.addrs().top();
+		if(assignee.empty()) throw runtime_error("no assignee");
+		instr->mod(assignee.front(), assignee.front(), ezAddress($2.segment, $2.offset));
+		s_proc_stack.addrs().pop();
+	}
 
 print : cmd_print {
 		s_proc_stack.addrs().push(vector<ezAddress>());
