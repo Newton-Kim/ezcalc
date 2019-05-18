@@ -1,1 +1,23 @@
-3j,
+root -9 is 3j:
+sin(0*pi) is 0
+cos(0*pi) is 1
+tan(0*pi) is 0
+sin(0.166667*pi) is 0.5
+cos(0.166667*pi) is 0.866025
+tan(0.166667*pi) is 0.57735
+sin(0.333333*pi) is 0.866025
+cos(0.333333*pi) is 0.5
+tan(0.333333*pi) is 1.73205
+sin(0.5*pi) is 1
+cos(0.5*pi) is 6.12323e-17
+tan(0.5*pi) is 1.63312e+16
+sin(0.666667*pi) is 0.866025
+cos(0.666667*pi) is -0.5
+tan(0.666667*pi) is -1.73205
+sin(0.833333*pi) is 0.5
+cos(0.833333*pi) is -0.866025
+tan(0.833333*pi) is -0.57735
+sin(1*pi) is 5.66554e-16
+cos(1*pi) is -1
+tan(1*pi) is -5.66554e-16
+0.3V is -10.4576dBV
